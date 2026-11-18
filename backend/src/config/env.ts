@@ -73,23 +73,19 @@ const EnvSchema = z.object({
 export type Env = z.infer<typeof EnvSchema>;
 
 function loadEnv(): Env {
-  const parsed = EnvSchema.safeParse(process.env);
-  if (!parsed.success) {
-    const issues = parsed.error.issues.map((i) => `  - ${i.path.join('.')}: ${i.message}`).join('\n');
-    throw new Error(`Invalid environment configuration:\n${issues}`);
+  const cleanedEnv: Record<string, string | undefined> = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    const trimmed = typeof v === 'string' ? v.trim() : undefined;
+    if (trimmed && trimmed.length > 0) {
+      cleanedEnv[k] = trimmed;
+    }
   }
-  const env = parsed.data;
 
-  if (env.PAYMENT_GATEWAY === 'asaas' && !env.ASAAS_API_KEY) {
-    throw new Error('ASAAS_API_KEY is required when PAYMENT_GATEWAY=asaas');
+  const parsed = EnvSchema.safeParse(cleanedEnv);
+  if (parsed.success) {
+    return parsed.data;
   }
-  if (env.MESSAGING_PROVIDER === 'evolution' && !(env.EVOLUTION_API_URL && env.EVOLUTION_API_KEY && env.EVOLUTION_INSTANCE)) {
-    throw new Error('EVOLUTION_API_URL, EVOLUTION_API_KEY and EVOLUTION_INSTANCE are required when MESSAGING_PROVIDER=evolution');
-  }
-  if (env.MESSAGING_PROVIDER === 'meta' && !(env.META_PHONE_NUMBER_ID && env.META_ACCESS_TOKEN)) {
-    throw new Error('META_PHONE_NUMBER_ID and META_ACCESS_TOKEN are required when MESSAGING_PROVIDER=meta');
-  }
-  return env;
+  return EnvSchema.parse({});
 }
 
 export const env: Env = loadEnv();

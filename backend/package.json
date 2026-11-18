@@ -2,7 +2,7 @@
     "name": "@obra-rent/backend",
     "version": "1.0.0",
     "description": "Mantovani API - Construction equipment rental platform",
-    "main": "dist/server.js",
+    "main": "src/app.ts",
     "scripts": {
         "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
         "build": "tsc -p tsconfig.build.json",
@@ -17,7 +17,6 @@
     },
     "author": "",
     "license": "UNLICENSED",
-    "type": "commonjs",
     "dependencies": {
         "axios": "^1.21.1",
         "cors": "^2.8.6",
