@@ -1,8 +1,6 @@
 import { ImageResponse } from 'next/og';
 import type { NextRequest } from 'next/server';
 
-export const runtime = 'edge';
-
 export async function GET(_req: NextRequest, context: { params: Promise<{ size: string }> }) {
   const { size: rawSize } = await context.params;
   const parsed = Number.parseInt(rawSize, 10);
