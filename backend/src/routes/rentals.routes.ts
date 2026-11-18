@@ -116,11 +116,20 @@ rentalsRouter.post('/quote', async (req, res) => {
       }
     : undefined;
 
+  const rawQuoteMethod = String(body.paymentMethod ?? body.payment_method ?? '').toUpperCase();
+  const quotePaymentMethod: PaymentMethod | undefined =
+    rawQuoteMethod === 'CASH' || rawQuoteMethod === 'DINHEIRO'
+      ? 'CASH'
+      : rawQuoteMethod === 'PIX' || rawQuoteMethod === 'CREDIT_CARD' || rawQuoteMethod === 'BOLETO'
+        ? (rawQuoteMethod as PaymentMethod)
+        : undefined;
+
   const quote = await rentalService.quote({
     startDate,
     endDate,
     items,
     deliveryAddress: partialAddress,
+    paymentMethod: quotePaymentMethod,
   });
 
   res.json({ data: quote });
@@ -143,9 +152,10 @@ rentalsRouter.post('/', async (req, res) => {
   const email = String(rawClient.email ?? body.email ?? '').trim() || undefined;
   const phone = String(rawClient.phone ?? body.phone ?? '').trim() || undefined;
 
-  const rawMethod = String(body.paymentMethod ?? body.payment_method ?? 'PIX').toUpperCase();
-  if (!['PIX', 'CREDIT_CARD', 'BOLETO'].includes(rawMethod)) {
-    throw new ValidationError('Método de pagamento inválido. Use PIX, CREDIT_CARD ou BOLETO.', [
+  const rawMethodInput = String(body.paymentMethod ?? body.payment_method ?? 'PIX').toUpperCase();
+  const rawMethod = rawMethodInput === 'DINHEIRO' ? 'CASH' : rawMethodInput;
+  if (!['PIX', 'CASH', 'CREDIT_CARD', 'BOLETO'].includes(rawMethod)) {
+    throw new ValidationError('Método de pagamento inválido. Use PIX, CASH, CREDIT_CARD ou BOLETO.', [
       { path: 'paymentMethod', message: 'Método inválido' },
     ]);
   }

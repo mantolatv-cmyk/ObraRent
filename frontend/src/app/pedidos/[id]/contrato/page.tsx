@@ -359,6 +359,11 @@ export default function RentalContractPage() {
               <div className="border-l border-white/15 pl-2 print:border-slate-300">
                 <span className="text-[10px] text-slate-400 print:text-slate-600 block">Valor Total do Contrato</span>
                 <span className="font-mono text-sm font-bold text-amber-400 print:text-slate-950">{formatBRL(rental.totalAmount)}</span>
+                {rental.subtotal > rental.totalAmount ? (
+                  <span className="block text-[9.5px] font-semibold text-emerald-400 print:text-emerald-700">
+                    (-8% desc. dinheiro: -{formatBRL(rental.subtotal - rental.totalAmount)})
+                  </span>
+                ) : null}
               </div>
             </div>
           </section>

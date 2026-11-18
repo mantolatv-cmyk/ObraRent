@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS payments (
   gateway         TEXT          NOT NULL,
   gateway_tx_id   TEXT          NOT NULL,
   amount          NUMERIC(12,2) NOT NULL CHECK (amount > 0),
-  payment_method  TEXT          NOT NULL CHECK (payment_method IN ('PIX', 'CREDIT_CARD', 'BOLETO', 'INVOICED')),
+  payment_method  TEXT          NOT NULL CHECK (payment_method IN ('PIX', 'CASH', 'CREDIT_CARD', 'BOLETO', 'INVOICED')),
   status          TEXT          NOT NULL DEFAULT 'PENDING'
                   CHECK (status IN ('PENDING', 'PAID', 'FAILED', 'REFUNDED')),
   pix_copy_paste  TEXT,

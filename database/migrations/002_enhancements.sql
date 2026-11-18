@@ -20,4 +20,4 @@ ALTER TABLE payments
 
 ALTER TABLE payments
   ADD CONSTRAINT payments_payment_method_check
-  CHECK (payment_method IN ('PIX', 'CREDIT_CARD', 'BOLETO', 'INVOICED'));
+  CHECK (payment_method IN ('PIX', 'CASH', 'CREDIT_CARD', 'BOLETO', 'INVOICED'));

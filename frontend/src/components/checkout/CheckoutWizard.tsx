@@ -130,6 +130,7 @@ export function CheckoutWizard({ initialCategories }: CheckoutWizardProps) {
     return {
       startDate: state.startDate,
       endDate: state.endDate,
+      paymentMethod: state.paymentMethod,
       items: selectedCategories.map(({ category, quantity }) => ({
         categoryId: category.id,
         quantity,
@@ -150,6 +151,7 @@ export function CheckoutWizard({ initialCategories }: CheckoutWizardProps) {
     state.step,
     state.startDate,
     state.endDate,
+    state.paymentMethod,
     state.address.cep,
     state.address.street,
     state.address.number,
@@ -354,7 +356,9 @@ export function CheckoutWizard({ initialCategories }: CheckoutWizardProps) {
         : state.step === 2
           ? state.paymentMethod === 'PIX'
             ? 'Gerar Pix do pedido'
-            : 'Finalizar pedido'
+            : state.paymentMethod === 'CASH'
+              ? 'Finalizar pedido (8% OFF)'
+              : 'Finalizar pedido'
           : '';
 
   return (
@@ -462,6 +466,7 @@ export function CheckoutWizard({ initialCategories }: CheckoutWizardProps) {
           startDate={state.startDate}
           endDate={state.endDate}
           deliveryTimeSlot={state.deliveryTimeSlot}
+          paymentMethod={state.paymentMethod}
           estimate={estimate}
           quote={quote}
           quoteLoading={quoteLoading}

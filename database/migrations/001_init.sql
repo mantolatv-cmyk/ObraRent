@@ -132,7 +132,7 @@ CREATE TABLE payments (
   gateway         TEXT          NOT NULL,              -- mock | asaas | pagarme
   gateway_tx_id   TEXT          NOT NULL,
   amount          NUMERIC(12,2) NOT NULL CHECK (amount > 0),
-  payment_method  TEXT          NOT NULL CHECK (payment_method IN ('PIX', 'CREDIT_CARD', 'BOLETO')),
+  payment_method  TEXT          NOT NULL CHECK (payment_method IN ('PIX', 'CASH', 'CREDIT_CARD', 'BOLETO')),
   status          TEXT          NOT NULL DEFAULT 'PENDING'
                   CHECK (status IN ('PENDING', 'PAID', 'FAILED', 'REFUNDED')),
   pix_copy_paste  TEXT,

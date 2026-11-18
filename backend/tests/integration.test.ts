@@ -690,4 +690,56 @@ describe('Mantovani API — End-to-End Integration Suite', () => {
     expect(overbookRes.status).toBe(400);
     expect(overbookRes.body.error.message).toContain('já está esgotado');
   });
+
+  it('11. Cash payment applies 8% discount on quote and rental creation', async () => {
+    const catsRes = await request(app).get('/api/v1/equipment/categories');
+    const plate = catsRes.body.data.find((c: { slug: string }) => c.slug === 'placa-vibratoria');
+    expect(plate).toBeDefined();
+
+    // Base daily rate of placa-vibratoria is R$ 150.00 -> 2 days = R$ 300.00 subtotal
+    // 8% cash discount = R$ 24.00 -> totalAmount = R$ 276.00
+    const quoteRes = await request(app)
+      .post('/api/v1/rentals/quote')
+      .send({
+        startDate: '2026-12-20',
+        endDate: '2026-12-21',
+        paymentMethod: 'CASH',
+        items: [{ categoryId: plate.id, quantity: 1 }],
+      });
+    expect(quoteRes.status).toBe(200);
+    expect(quoteRes.body.data.subtotal).toBe(300);
+    expect(quoteRes.body.data.cashDiscountPct).toBe(8);
+    expect(quoteRes.body.data.cashDiscountAmount).toBe(24);
+    expect(quoteRes.body.data.totalAmount).toBe(276);
+
+    const createRes = await request(app)
+      .post('/api/v1/rentals')
+      .send({
+        startDate: '2026-12-20',
+        endDate: '2026-12-21',
+        paymentMethod: 'CASH',
+        items: [{ categoryId: plate.id, quantity: 1 }],
+        client: {
+          cnpj: '52342052000140',
+          companyName: 'Maquinas para Concreto Atibaiense Ltda',
+          email: 'caixa@mantovani.com.br',
+          phone: '11988887777',
+        },
+        deliveryAddress: {
+          cep: '12944430',
+          street: 'Rua Bragança Paulista',
+          number: '132',
+          district: 'Centro',
+          city: 'Atibaia',
+          state: 'SP',
+        },
+      });
+    expect(createRes.status).toBe(201);
+    expect(createRes.body.data.payment.method).toBe('CASH');
+    expect(createRes.body.data.subtotal).toBe(300);
+    expect(createRes.body.data.cashDiscountPct).toBe(8);
+    expect(createRes.body.data.cashDiscountAmount).toBe(24);
+    expect(createRes.body.data.totalAmount).toBe(276);
+    expect(createRes.body.data.payment.amount).toBe(276);
+  });
 });

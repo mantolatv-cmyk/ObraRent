@@ -56,6 +56,10 @@ async function ensureExternalSchema(activePgPool: Pool): Promise<void> {
   } else {
     await activePgPool.query('ALTER TABLE clients ADD COLUMN IF NOT EXISTS password_hash TEXT;');
     await activePgPool.query('ALTER TABLE rentals ADD COLUMN IF NOT EXISTS delivery_time_slot TEXT;');
+    await activePgPool.query('ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_payment_method_check;');
+    await activePgPool.query(
+      "ALTER TABLE payments ADD CONSTRAINT payments_payment_method_check CHECK (payment_method IN ('PIX', 'CASH', 'CREDIT_CARD', 'BOLETO', 'INVOICED'));",
+    );
   }
 }
 

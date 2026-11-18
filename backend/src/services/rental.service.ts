@@ -50,6 +50,7 @@ export interface QuoteInput {
   endDate: string;
   items: RequestedItemInput[];
   deliveryAddress?: Partial<DeliveryAddress>;
+  paymentMethod?: PaymentMethod;
 }
 
 export interface CreateRentalInput {
@@ -63,6 +64,8 @@ export interface CreateRentalInput {
   contactPhone?: string;
   deliveryTimeSlot?: string;
 }
+
+export const CASH_PAYMENT_DISCOUNT_PCT = 8;
 
 export function calculateDiscountPct(days: number): number {
   if (days >= 30) return 20;
@@ -124,7 +127,10 @@ export class RentalService {
 
     const subtotal = round2(lines.reduce((acc, l) => acc + l.subtotal, 0));
     const freight = freightService.calculate(input.deliveryAddress, totalUnits);
-    const totalAmount = subtotal; // Frete eliminado da conta de valores das diárias
+    const isCash = input.paymentMethod === 'CASH';
+    const cashDiscountPct = isCash ? CASH_PAYMENT_DISCOUNT_PCT : 0;
+    const cashDiscountAmount = isCash ? round2(subtotal * (CASH_PAYMENT_DISCOUNT_PCT / 100)) : 0;
+    const totalAmount = round2(subtotal - cashDiscountAmount);
 
     return {
       startDate: input.startDate,
@@ -132,6 +138,8 @@ export class RentalService {
       days,
       lines,
       subtotal,
+      cashDiscountPct,
+      cashDiscountAmount,
       freight,
       totalAmount,
     };
@@ -232,7 +240,10 @@ export class RentalService {
 
         const subtotal = round2(lines.reduce((acc, l) => acc + l.subtotal, 0));
         const freight = freightService.calculate(input.deliveryAddress, totalUnits);
-        const totalAmount = subtotal; // Frete eliminado da conta de valores das diárias
+        const isCash = input.paymentMethod === 'CASH';
+        const cashDiscountPct = isCash ? CASH_PAYMENT_DISCOUNT_PCT : 0;
+        const cashDiscountAmount = isCash ? round2(subtotal * (CASH_PAYMENT_DISCOUNT_PCT / 100)) : 0;
+        const totalAmount = round2(subtotal - cashDiscountAmount);
 
         const code = generateRentalCode();
         const paymentDueAt = new Date(Date.now() + env.PAYMENT_HOLD_MINUTES * 60_000);
@@ -358,6 +369,8 @@ export class RentalService {
           days,
           lines,
           subtotal,
+          cashDiscountPct,
+          cashDiscountAmount,
           freight,
           totalAmount,
           client: {
@@ -505,7 +518,11 @@ export class RentalService {
         const newSubtotal = round2(
           itemRows.reduce((acc, row) => acc + toNumber(row.agreed_daily_rate) * newDays, 0),
         );
-        const newTotal = round2(newSubtotal + toNumber(header.freight_amount));
+        const hadCashDiscount = toNumber(header.total_amount) < toNumber(header.subtotal_amount);
+        const cashDiscountAmount = hadCashDiscount
+          ? round2(newSubtotal * (CASH_PAYMENT_DISCOUNT_PCT / 100))
+          : 0;
+        const newTotal = round2(newSubtotal - cashDiscountAmount + toNumber(header.freight_amount));
 
         await rentalRepository.extendPeriod(tx, {
           rentalId,
@@ -574,6 +591,12 @@ export class RentalService {
       };
     }
 
+    const subtotalVal = toNumber(header.subtotal_amount);
+    const totalVal = toNumber(header.total_amount);
+    const isCashPayment = paymentRecord?.paymentMethod === 'CASH' || totalVal < subtotalVal;
+    const cashDiscountAmount = isCashPayment && subtotalVal > totalVal ? round2(subtotalVal - totalVal) : 0;
+    const cashDiscountPct = cashDiscountAmount > 0 ? CASH_PAYMENT_DISCOUNT_PCT : 0;
+
     return {
       id: header.id,
       code: header.code,
@@ -583,9 +606,11 @@ export class RentalService {
       endDate: header.end_date,
       days,
       lines,
-      subtotal: toNumber(header.subtotal_amount),
+      subtotal: subtotalVal,
+      cashDiscountPct,
+      cashDiscountAmount,
       freight,
-      totalAmount: toNumber(header.total_amount),
+      totalAmount: totalVal,
       client: {
         id: header.client_id,
         cnpj: header.client_cnpj.trim(),

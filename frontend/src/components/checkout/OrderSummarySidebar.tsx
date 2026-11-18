@@ -1,18 +1,19 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, Loader2, ShieldCheck, Truck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Banknote, Loader2, ShieldCheck, Truck } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
-import { formatBRL, formatPeriod, FREIGHT_ZONE_LABEL, pluralize } from '@/lib/format';
+import { CASH_DISCOUNT_PCT, formatBRL, formatPeriod, FREIGHT_ZONE_LABEL, pluralize } from '@/lib/format';
 import type { CheckoutStep, EstimatedLine } from '@/components/checkout/state';
-import type { Quote } from '@/lib/types';
+import type { PaymentMethod, Quote } from '@/lib/types';
 
 export interface OrderSummarySidebarProps {
   step: CheckoutStep;
   startDate: string;
   endDate: string;
   deliveryTimeSlot?: string;
+  paymentMethod?: PaymentMethod;
   estimate: {
     days: number;
     discountPct: number;
@@ -34,6 +35,7 @@ export function OrderSummarySidebar({
   startDate,
   endDate,
   deliveryTimeSlot,
+  paymentMethod,
   estimate,
   quote,
   quoteLoading,
@@ -43,8 +45,18 @@ export function OrderSummarySidebar({
   onPrimaryAction,
   onBack,
 }: OrderSummarySidebarProps) {
-  const displayTotal = quote ? quote.totalAmount : estimate.subtotal;
   const displaySubtotal = quote ? quote.subtotal : estimate.subtotal;
+  const isCash = paymentMethod === 'CASH';
+  const cashDiscountAmount = isCash
+    ? quote?.cashDiscountAmount && quote.cashDiscountAmount > 0
+      ? quote.cashDiscountAmount
+      : Math.round(displaySubtotal * (CASH_DISCOUNT_PCT / 100) * 100) / 100
+    : 0;
+  const displayTotal = isCash
+    ? Math.round((displaySubtotal - cashDiscountAmount) * 100) / 100
+    : quote
+      ? quote.totalAmount
+      : estimate.subtotal;
   const displayDays = quote ? quote.days : estimate.days;
 
   return (
@@ -106,6 +118,17 @@ export function OrderSummarySidebar({
                         {formatBRL(displaySubtotal)}
                       </dd>
                     </div>
+                    {isCash && cashDiscountAmount > 0 ? (
+                      <div className="flex items-center justify-between text-emerald-400">
+                        <dt className="flex items-center gap-1.5 font-medium">
+                          <Banknote aria-hidden className="h-4 w-4" />
+                          <span>Desconto em dinheiro ({CASH_DISCOUNT_PCT}%)</span>
+                        </dt>
+                        <dd className="font-semibold tabular-nums">
+                          - {formatBRL(cashDiscountAmount)}
+                        </dd>
+                      </div>
+                    ) : null}
                     <div className="flex items-center justify-between text-slate-300">
                       <dt className="flex items-center gap-1.5">
                         <Truck aria-hidden className="h-4 w-4 text-yellow-400" />
@@ -182,7 +205,11 @@ export function OrderSummarySidebar({
               </p>
               <p className="truncate text-lg font-bold text-amber-400 tabular-nums">
                 {formatBRL(displayTotal)}
-                {estimate.discountPct > 0 ? (
+                {isCash ? (
+                  <span className="ml-1.5 text-xs font-semibold text-emerald-400">
+                    (-{CASH_DISCOUNT_PCT}% dinheiro)
+                  </span>
+                ) : estimate.discountPct > 0 ? (
                   <span className="ml-1.5 text-xs font-semibold text-yellow-400">
                     (-{estimate.discountPct}%)
                   </span>

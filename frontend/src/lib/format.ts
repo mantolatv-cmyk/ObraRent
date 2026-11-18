@@ -153,8 +153,11 @@ export const FREIGHT_ZONE_LABEL: Record<'URBAN' | 'METRO' | 'REGIONAL' | 'EXTEND
   EXTENDED: 'Área estendida',
 };
 
-export const PAYMENT_METHOD_LABEL: Record<'PIX' | 'CREDIT_CARD' | 'BOLETO', string> = {
+export const CASH_DISCOUNT_PCT = 8;
+
+export const PAYMENT_METHOD_LABEL: Record<'PIX' | 'CASH' | 'CREDIT_CARD' | 'BOLETO', string> = {
   PIX: 'Pix',
+  CASH: 'Dinheiro (8% OFF)',
   CREDIT_CARD: 'Cartão de crédito',
   BOLETO: 'Boleto',
 };

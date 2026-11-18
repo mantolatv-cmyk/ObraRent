@@ -1,6 +1,6 @@
 export type EquipmentStatus = 'AVAILABLE' | 'RENTED' | 'MAINTENANCE' | 'RETIRED';
 export type RentalStatus = 'PENDING_PAYMENT' | 'CONFIRMED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-export type PaymentMethod = 'PIX' | 'CREDIT_CARD' | 'BOLETO';
+export type PaymentMethod = 'PIX' | 'CASH' | 'CREDIT_CARD' | 'BOLETO';
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
 export type RentalChannel = 'WEB' | 'WHATSAPP';
 
@@ -149,6 +149,8 @@ export interface Quote {
   days: number;
   lines: QuoteLine[];
   subtotal: number;
+  cashDiscountPct?: number;
+  cashDiscountAmount?: number;
   freight: Freight;
   totalAmount: number;
 }

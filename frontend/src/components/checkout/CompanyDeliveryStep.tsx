@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
+  Banknote,
   Building2,
   CheckCircle2,
   Clock,
@@ -23,6 +24,7 @@ import { useCepLookup } from '@/hooks/useCepLookup';
 import { useCnpjLookup } from '@/hooks/useCnpjLookup';
 import { cn } from '@/lib/cn';
 import {
+  CASH_DISCOUNT_PCT,
   formatBRL,
   formatCpfOrCnpj,
   formatPeriod,
@@ -54,6 +56,13 @@ const PAYMENT_OPTIONS: {
       subtitle: 'QR Code e Pix Copia e Cola · Liberação imediata dos equipamentos',
       badge: 'Aprovação instantânea',
       Icon: QrCode,
+    },
+    {
+      method: 'CASH',
+      title: 'Dinheiro na Entrega',
+      subtitle: 'Pagamento em espécie no ato da entrega na obra com 8% de desconto imediato',
+      badge: '8% de desconto',
+      Icon: Banknote,
     },
     {
       method: 'CREDIT_CARD',
@@ -472,6 +481,11 @@ export function CompanyDeliveryStep({
                         <span className="font-mono font-semibold text-white">52.342.052/0001-40</span> · Máquinas para Concreto Atibaiense Ltda
                       </p>
                     ) : null}
+                    {opt.method === 'CASH' && selected ? (
+                      <p className="mt-1.5 text-xs font-medium text-emerald-400">
+                        ✓ Desconto de <span className="font-bold">{CASH_DISCOUNT_PCT}%</span> aplicado automaticamente no total das diárias · Pagamento no ato da entrega
+                      </p>
+                    ) : null}
                   </div>
                   <span
                     aria-hidden
@@ -554,6 +568,21 @@ export function CompanyDeliveryStep({
                 {formatBRL(quote ? quote.subtotal : fallbackEstimate.subtotal)}
               </dd>
             </div>
+            {paymentMethod === 'CASH' ? (
+              <div className="flex items-center justify-between text-emerald-400">
+                <dt className="flex items-center gap-1.5 font-medium">
+                  <Banknote aria-hidden className="h-4 w-4" />
+                  <span>Desconto pagamento em dinheiro ({CASH_DISCOUNT_PCT}%)</span>
+                </dt>
+                <dd className="font-semibold tabular-nums">
+                  - {formatBRL(
+                    quote?.cashDiscountAmount && quote.cashDiscountAmount > 0
+                      ? quote.cashDiscountAmount
+                      : Math.round((quote ? quote.subtotal : fallbackEstimate.subtotal) * (CASH_DISCOUNT_PCT / 100) * 100) / 100
+                  )}
+                </dd>
+              </div>
+            ) : null}
             <div className="flex items-center justify-between text-slate-300">
               <dt className="flex items-center gap-1.5">
                 <Truck aria-hidden className="h-4 w-4 text-yellow-400" />
@@ -572,7 +601,19 @@ export function CompanyDeliveryStep({
             <div className="flex items-center justify-between border-t border-white/10 pt-3 text-base font-semibold text-white">
               <dt>Total das diárias</dt>
               <dd className="text-xl font-bold text-amber-400 tabular-nums drop-shadow-[0_0_10px_rgba(250, 204, 21, 0.25)]">
-                {formatBRL(quote ? quote.totalAmount : fallbackEstimate.subtotal)}
+                {formatBRL(
+                  paymentMethod === 'CASH'
+                    ? Math.round(
+                        ((quote ? quote.subtotal : fallbackEstimate.subtotal) -
+                          (quote?.cashDiscountAmount && quote.cashDiscountAmount > 0
+                            ? quote.cashDiscountAmount
+                            : Math.round((quote ? quote.subtotal : fallbackEstimate.subtotal) * (CASH_DISCOUNT_PCT / 100) * 100) / 100)) *
+                          100,
+                      ) / 100
+                    : quote
+                      ? quote.totalAmount
+                      : fallbackEstimate.subtotal
+                )}
               </dd>
             </div>
           </dl>

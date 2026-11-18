@@ -407,6 +407,23 @@ class InMemoryDatabase {
       );
     }
 
+    if (sql.includes('r.delivery_time_slot = $2') && sql.includes('ri.category_id = $3::uuid')) {
+      const date = String(values[0] ?? '');
+      const slot = String(values[1] ?? '');
+      const catId = String(values[2] ?? '');
+      const now = new Date();
+      let count = 0;
+      for (const r of this.rentals) {
+        if (r.start_date !== date || r.delivery_time_slot !== slot || !this.isBlockingRental(r, now)) continue;
+        for (const ri of this.rentalItems) {
+          if (ri.rental_id === r.id && ri.blocks_inventory && ri.category_id === catId) {
+            count += 1;
+          }
+        }
+      }
+      return this.ok<R>([{ count: String(count) }]);
+    }
+
     // 5. Real-time availability (LEFT JOIN LATERAL)
     if (sql.includes('FROM equipment_categories c') && sql.includes('LEFT JOIN LATERAL')) {
       const startDate = String(values[0] ?? '');

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   ArrowUpRight,
+  Banknote,
   Check,
   Clock,
   Copy,
@@ -30,6 +31,7 @@ import {
   SHOW_DEV_SIMULATOR,
 } from '@/lib/config';
 import {
+  CASH_DISCOUNT_PCT,
   formatBRL,
   formatCountdown,
   formatDateTime,
@@ -159,6 +161,13 @@ export function PaymentPanel({
   }
 
   const isPix = payment.method === 'PIX';
+  const isCash = payment.method === 'CASH';
+  const cashSaved =
+    rental.cashDiscountAmount && rental.cashDiscountAmount > 0
+      ? rental.cashDiscountAmount
+      : isCash && rental.subtotal > rental.totalAmount
+        ? Math.round((rental.subtotal - rental.totalAmount) * 100) / 100
+        : 0;
   const expired = remainingMs !== null && remainingMs <= 0 && rental.status === 'PENDING_PAYMENT';
   const displayBeneficiary = payment.pixMerchantName || PIX_BENEFICIARY;
   const displayCity = payment.pixMerchantCity || PIX_CITY;
@@ -178,6 +187,7 @@ export function PaymentPanel({
           <span className="flex flex-wrap items-center gap-2.5">
             <span>Pagamento via {PAYMENT_METHOD_LABEL[payment.method]}</span>
             {isPix ? <Badge tone="accent">Aprovação instantânea</Badge> : null}
+            {isCash ? <Badge tone="success">-{CASH_DISCOUNT_PCT}% de desconto aplicado</Badge> : null}
           </span>
         }
         description={
@@ -337,6 +347,54 @@ export function PaymentPanel({
                 )}
               </div>
             </div>
+          </div>
+        ) : isCash ? (
+          <div className="space-y-4 rounded-2xl border border-emerald-400/35 bg-slate-950/75 p-5">
+            <div className="flex items-start gap-3.5">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-400/40 bg-emerald-400/15 text-emerald-400">
+                <Banknote aria-hidden className="h-6 w-6" />
+              </span>
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-base font-bold text-white">
+                  Pagamento em Dinheiro no Ato da Entrega ({CASH_DISCOUNT_PCT}% OFF)
+                </p>
+                <p className="text-sm text-slate-300">
+                  O pagamento em espécie deverá ser entregue ao motorista/entregador da Mantovani no momento do
+                  descarregamento dos equipamentos na obra.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 rounded-xl border border-white/10 bg-slate-900/75 p-4 sm:grid-cols-3">
+              <div>
+                <p className="text-xs text-slate-400">Valor original das diárias</p>
+                <p className="mt-0.5 text-sm font-medium text-slate-300 line-through tabular-nums">
+                  {formatBRL(rental.subtotal)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-emerald-400">Economia em dinheiro ({CASH_DISCOUNT_PCT}%)</p>
+                <p className="mt-0.5 text-sm font-bold text-emerald-400 tabular-nums">
+                  - {formatBRL(cashSaved)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-yellow-300">Total a pagar em espécie</p>
+                <p className="mt-0.5 text-lg font-extrabold text-amber-400 tabular-nums">
+                  {formatBRL(rental.totalAmount)}
+                </p>
+              </div>
+            </div>
+
+            <a
+              href={whatsappProofUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-base font-semibold text-slate-950 shadow-md transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            >
+              <MessageCircle aria-hidden className="h-5 w-5" />
+              Confirmar entrega / Solicitar troco pelo WhatsApp
+            </a>
           </div>
         ) : (
           <div className="space-y-4 rounded-2xl border border-white/10 bg-slate-950/65 p-5">
