@@ -1,21 +1,110 @@
-import { readFile } from 'node:fs/promises';
+import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { btree_gist } from '@electric-sql/pglite/contrib/btree_gist';
 import type { QueryResult, QueryResultRow } from 'pg';
 import { logger } from '../lib/logger';
+import { INIT_SQL, SEED_SQL } from './sql-bundle';
 
 let instancePromise: Promise<PGlite> | null = null;
 
+function resolvePgliteDistDir(): string | null {
+  const candidates: string[] = [];
+  try {
+    const resolved = require.resolve('@electric-sql/pglite');
+    candidates.push(path.dirname(resolved));
+  } catch {
+    // ignore
+  }
+  candidates.push(
+    path.join(process.cwd(), 'node_modules/@electric-sql/pglite/dist'),
+    path.join(process.cwd(), 'backend/node_modules/@electric-sql/pglite/dist'),
+    path.join(__dirname, '../../node_modules/@electric-sql/pglite/dist'),
+    path.join(__dirname, '../node_modules/@electric-sql/pglite/dist'),
+    path.join(__dirname, 'node_modules/@electric-sql/pglite/dist'),
+  );
+
+  for (const dir of candidates) {
+    if (fs.existsSync(path.join(dir, 'pglite.wasm')) && fs.existsSync(path.join(dir, 'pglite.data'))) {
+      return dir;
+    }
+  }
+  return null;
+}
+
+async function createPgliteInstance(dataDir?: string): Promise<{ db: PGlite; hasBtreeGist: boolean }> {
+  const distDir = resolvePgliteDistDir();
+  if (distDir) {
+    try {
+      // Explicit file reads so @vercel/nft traces WASM/data assets and bundled code resolves them reliably
+      const pgliteWasmBytes = fs.readFileSync(path.join(distDir, 'pglite.wasm'));
+      const initdbWasmBytes = fs.readFileSync(path.join(distDir, 'initdb.wasm'));
+      const pgliteDataBytes = fs.readFileSync(path.join(distDir, 'pglite.data'));
+      const btreeGistPath = path.join(distDir, 'btree_gist.tar.gz');
+
+      const wasmGlobal = (globalThis as unknown as {
+        WebAssembly: { compile(bytes: Uint8Array): Promise<unknown> };
+      }).WebAssembly;
+      const [pgliteWasmModule, initdbWasmModule] = await Promise.all([
+        wasmGlobal.compile(pgliteWasmBytes),
+        wasmGlobal.compile(initdbWasmBytes),
+      ]);
+      const fsBundle = new Blob([pgliteDataBytes]);
+
+      if (fs.existsSync(btreeGistPath)) {
+        // Touch file so @vercel/nft traces btree_gist.tar.gz
+        fs.statSync(btreeGistPath);
+        const customBtreeGist = {
+          name: 'btree_gist',
+          setup: async () => ({ bundlePath: pathToFileURL(btreeGistPath) }),
+        };
+        const db = await PGlite.create({
+          dataDir,
+          pgliteWasmModule: pgliteWasmModule as never,
+          initdbWasmModule: initdbWasmModule as never,
+          fsBundle,
+          extensions: { btree_gist: customBtreeGist },
+        });
+        return { db, hasBtreeGist: true };
+      }
+
+      const db = await PGlite.create({
+        dataDir,
+        pgliteWasmModule: pgliteWasmModule as never,
+        initdbWasmModule: initdbWasmModule as never,
+        fsBundle,
+      });
+      return { db, hasBtreeGist: false };
+    } catch (err) {
+      logger.warn({ err }, 'Explicit PGlite asset load failed; falling back to default PGlite.create');
+    }
+  }
+
+  try {
+    const db = await PGlite.create({ dataDir, extensions: { btree_gist } });
+    return { db, hasBtreeGist: true };
+  } catch {
+    const db = await PGlite.create({ dataDir });
+    return { db, hasBtreeGist: false };
+  }
+}
+
+function stripBtreeGist(sql: string): string {
+  return sql
+    .replace(/CREATE EXTENSION IF NOT EXISTS btree_gist;/gi, '')
+    .replace(/,\s*CONSTRAINT excl_asset_double_booking EXCLUDE USING gist[\s\S]*?WHERE \(blocks_inventory\)/gi, '');
+}
+
 async function initEmbeddedPg(): Promise<PGlite> {
   const dataDir = process.env.DEV_DB_DIR ? path.resolve(process.env.DEV_DB_DIR) : undefined;
-  const db = await PGlite.create({ dataDir, extensions: { btree_gist } });
+  const { db, hasBtreeGist } = await createPgliteInstance(dataDir);
+
   // Return DATE (OID 1082) as 'YYYY-MM-DD' string to match pg type parser
   db.parsers[1082] = (val: string) => val;
 
-  const dbRoot = path.resolve(__dirname, '../../../database');
-  const initSql = await readFile(path.join(dbRoot, 'migrations/001_init.sql'), 'utf8');
-  const seedSql = await readFile(path.join(dbRoot, 'seeds/001_catalog.sql'), 'utf8');
+  const initSql = hasBtreeGist ? INIT_SQL : stripBtreeGist(INIT_SQL);
+  const seedSql = SEED_SQL;
 
   try {
     const check = await db.query<{ count: string }>(`
@@ -31,7 +120,7 @@ async function initEmbeddedPg(): Promise<PGlite> {
       logger.info('Embedded PostgreSQL (PGlite WASM) ready with existing database');
     }
   } catch {
-    await db.exec(initSql);
+    await db.exec(hasBtreeGist ? stripBtreeGist(INIT_SQL) : initSql);
     await db.exec(seedSql);
     logger.info('Embedded PostgreSQL (PGlite WASM) initialized with migrations and catalog seed');
   }

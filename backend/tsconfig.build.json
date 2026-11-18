@@ -5,5 +5,5 @@
     "outDir": "dist"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["src/db/dev-server.ts", "src/db/embedded-pg.ts"]
+  "exclude": ["src/db/dev-server.ts"]
 }

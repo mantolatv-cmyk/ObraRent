@@ -1,13 +1,10 @@
 import Link from 'next/link';
-import { ArrowRight, Clock, QrCode, ShieldCheck, Truck, WifiOff } from 'lucide-react';
+import { ArrowRight, Clock, QrCode, ShieldCheck, Truck } from 'lucide-react';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SiteFooter } from '@/components/layout/SiteFooter';
-import { CategoryCard } from '@/components/catalog/CategoryCard';
-import { Alert } from '@/components/ui/Alert';
-import { Badge } from '@/components/ui/Badge';
+import { CatalogSection } from '@/components/catalog/CatalogSection';
 import { buttonClasses } from '@/components/ui/Button';
 import { getCategoriesSafe } from '@/lib/api/server';
-import { whatsappLink } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,60 +92,10 @@ export default async function HomePage() {
         </section>
 
         {/* Catalog Grid */}
-        <section aria-labelledby="catalogo-title" className="mt-6 sm:mt-10">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 id="catalogo-title" className="text-xl sm:text-2xl font-bold text-white">
-                Catálogo de Equipamentos
-              </h2>
-              <p className="mt-0.5 text-xs sm:text-sm text-slate-400">
-                Estoque físico monitorado em tempo real
-              </p>
-            </div>
-            {result.ok && result.data.length > 0 ? (
-              <Badge tone="accent" dot className="tabular-nums text-xs">
-                {result.data.length} disponíveis
-              </Badge>
-            ) : null}
-          </div>
-
-          {!result.ok ? (
-            <Alert
-              tone="warning"
-              className="mt-4"
-              title="Não foi possível carregar o catálogo agora"
-              action={
-                <div className="flex flex-wrap gap-3">
-                  <Link href="/" className={buttonClasses({ variant: 'dark' })} prefetch={false}>
-                    Tentar novamente
-                  </Link>
-                  <a
-                    href={whatsappLink('alugar')}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={buttonClasses({ variant: 'secondary' })}
-                  >
-                    Alugar pelo WhatsApp
-                  </a>
-                </div>
-              }
-            >
-              <span className="flex items-center gap-2">
-                <WifiOff aria-hidden className="h-4 w-4" /> {result.error.message}
-              </span>
-            </Alert>
-          ) : result.data.length === 0 ? (
-            <Alert tone="info" className="mt-4" title="Nenhum equipamento cadastrado ainda">
-              Fale com a gente pelo WhatsApp para uma cotação personalizada.
-            </Alert>
-          ) : (
-            <ul className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {result.data.map((c) => (
-                <CategoryCard key={c.id} category={c} />
-              ))}
-            </ul>
-          )}
-        </section>
+        <CatalogSection
+          initialCategories={result.ok ? result.data : null}
+          initialError={!result.ok ? result.error.message : null}
+        />
       </main>
       <SiteFooter />
     </>

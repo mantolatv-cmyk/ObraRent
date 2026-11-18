@@ -17,12 +17,19 @@ function baseUrl(): string {
       const raw = boundUrl.replace(/\/+$/, '');
       return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
     }
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+      return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}/api/v1`;
+    }
     if (process.env.VERCEL_URL) {
       return `https://${process.env.VERCEL_URL}/api/v1`;
     }
-  } else if (!process.env.NEXT_PUBLIC_API_URL) {
-    // In the browser on Vercel: use relative path '/api/v1' routed by Vercel rewrites to avoid CORS
-    return '/api/v1';
+  } else {
+    const isBrowserLocal =
+      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!process.env.NEXT_PUBLIC_API_URL || (!isBrowserLocal && API_URL.includes('localhost'))) {
+      // In the browser on Vercel: use relative path '/api/v1' routed by Vercel rewrites to avoid CORS
+      return '/api/v1';
+    }
   }
   return API_URL;
 }

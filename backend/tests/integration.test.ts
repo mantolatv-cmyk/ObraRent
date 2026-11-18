@@ -56,7 +56,7 @@ vi.mock('../src/db/pool', () => {
 });
 
 describe('Mantovani API — End-to-End Integration Suite', () => {
-  let app: ReturnType<typeof import('../src/app').createApp>;
+  let app: ReturnType<typeof import('../src/create-app').createApp>;
   let whatsappProviderService: typeof import('../src/services/whatsapp-provider.service').whatsappProviderService;
 
   beforeAll(async () => {
@@ -73,7 +73,7 @@ describe('Mantovani API — End-to-End Integration Suite', () => {
     await pglite.exec(migration2Sql);
     await pglite.exec(seedSql);
 
-    const appModule = await import('../src/app');
+    const appModule = await import('../src/create-app');
     const waModule = await import('../src/services/whatsapp-provider.service');
     app = appModule.createApp();
     whatsappProviderService = waModule.whatsappProviderService;
