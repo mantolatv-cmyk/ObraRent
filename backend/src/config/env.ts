@@ -47,9 +47,10 @@ const EnvSchema = z.object({
   GATEWAY_WEBHOOK_TOKEN: z.string().min(8).default('dev-gateway-webhook-token'),
   ASAAS_API_URL: z.string().url().default('https://api-sandbox.asaas.com/v3'),
   ASAAS_API_KEY: z.string().optional(),
-  PIX_KEY: z.string().default('00000000000191'),
-  PIX_MERCHANT_NAME: z.string().default('MANTOVANI LOCACOES'),
-  PIX_MERCHANT_CITY: z.string().default('SAO PAULO'),
+  PIX_KEY: z.string().default('52342052000140'),
+  PIX_MERCHANT_NAME: z.string().default('MAQUINAS PARA CONCRETO'),
+  PIX_MERCHANT_CITY: z.string().default('ATIBAIA'),
+  PIX_MERCHANT_CEP: z.string().default('12944430'),
 
   // External lookups
   CEP_LOOKUP_URL: z.string().url().default('https://viacep.com.br/ws'),

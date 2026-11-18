@@ -21,6 +21,9 @@ export interface ChargeResult {
   gatewayTxId: string;
   pixCopyPaste: string | null;
   pixQrCodeImage: string | null;
+  pixKey?: string | null;
+  pixMerchantName?: string | null;
+  pixMerchantCity?: string | null;
   invoiceUrl: string | null;
   expiresAt: Date;
 }
@@ -40,8 +43,12 @@ export class PaymentGatewayService {
     try {
       return await QRCode.toDataURL(pixCopyPaste, {
         errorCorrectionLevel: 'M',
-        margin: 1,
-        width: 320,
+        margin: 2,
+        width: 360,
+        color: {
+          dark: '#000000',
+          light: '#ffffff',
+        },
       });
     } catch (err) {
       logger.warn({ err }, 'Failed to render Pix QR code PNG');
@@ -65,9 +72,10 @@ export class PaymentGatewayService {
         pixKey: env.PIX_KEY,
         merchantName: env.PIX_MERCHANT_NAME,
         merchantCity: env.PIX_MERCHANT_CITY,
+        postalCode: env.PIX_MERCHANT_CEP,
         amount: input.amount,
         txid: input.rentalCode.replace(/[^A-Za-z0-9]/g, ''),
-        description: `Locacao ${input.rentalCode}`,
+        description: `Mantovani ${input.rentalCode}`,
       });
       const pixQrCodeImage = await this.renderQrCodeDataUrl(pixCopyPaste);
       return {
@@ -75,6 +83,9 @@ export class PaymentGatewayService {
         gatewayTxId,
         pixCopyPaste,
         pixQrCodeImage,
+        pixKey: env.PIX_KEY,
+        pixMerchantName: env.PIX_MERCHANT_NAME,
+        pixMerchantCity: env.PIX_MERCHANT_CITY,
         invoiceUrl: `${env.PUBLIC_APP_URL.replace(/\/$/, '')}/pedidos/${input.rentalId}`,
         expiresAt: input.expiresAt,
       };
@@ -85,6 +96,9 @@ export class PaymentGatewayService {
       gatewayTxId,
       pixCopyPaste: null,
       pixQrCodeImage: null,
+      pixKey: null,
+      pixMerchantName: null,
+      pixMerchantCity: null,
       invoiceUrl: `${env.PUBLIC_APP_URL.replace(/\/$/, '')}/pedidos/${input.rentalId}?checkout=${gatewayTxId}`,
       expiresAt: input.expiresAt,
     };

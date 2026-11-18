@@ -163,8 +163,13 @@ describe('Mantovani API — End-to-End Integration Suite', () => {
       'ALS-0003',
     ]);
     expect(rental.payment.method).toBe('PIX');
+    expect(rental.payment.pixKey).toBe('52342052000140');
+    expect(rental.payment.pixMerchantName).toBe('MAQUINAS PARA CONCRETO');
+    expect(rental.payment.pixMerchantCity).toBe('ATIBAIA');
     expect(rental.payment.pixCopyPaste).toContain('000201');
+    expect(rental.payment.pixCopyPaste).toContain('010211');
     expect(rental.payment.pixCopyPaste).toContain('br.gov.bcb.pix');
+    expect(rental.payment.pixCopyPaste).toContain('52342052000140');
     expect(rental.payment.pixQrCodeImage).toMatch(/^data:image\/png;base64,/);
 
     // 2. Availability on overlapping period (2026-12-11..2026-12-14) should now report only 1 unit left

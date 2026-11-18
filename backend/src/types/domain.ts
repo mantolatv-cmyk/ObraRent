@@ -161,6 +161,9 @@ export interface PaymentInfo {
   gatewayTxId: string;
   pixCopyPaste: string | null;
   pixQrCodeImage: string | null;
+  pixKey?: string | null;
+  pixMerchantName?: string | null;
+  pixMerchantCity?: string | null;
   invoiceUrl: string | null;
   expiresAt: string | null;
   paidAt: string | null;

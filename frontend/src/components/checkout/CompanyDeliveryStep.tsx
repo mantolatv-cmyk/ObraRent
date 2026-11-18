@@ -466,6 +466,12 @@ export function CompanyDeliveryStep({
                       {opt.badge ? <Badge tone="accent">{opt.badge}</Badge> : null}
                     </div>
                     <p className="mt-0.5 text-sm text-slate-300">{opt.subtitle}</p>
+                    {opt.method === 'PIX' && selected ? (
+                      <p className="mt-1.5 text-xs font-medium text-yellow-300">
+                        Chave CNPJ oficial:{' '}
+                        <span className="font-mono font-semibold text-white">52.342.052/0001-40</span> · Máquinas para Concreto Atibaiense Ltda
+                      </p>
+                    ) : null}
                   </div>
                   <span
                     aria-hidden
