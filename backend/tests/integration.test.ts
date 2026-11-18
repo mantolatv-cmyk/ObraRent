@@ -273,13 +273,18 @@ describe('Mantovani API — End-to-End Integration Suite', () => {
     expect(webhookRes.body.data.rental.status).toBe('CONFIRMED');
     expect(webhookRes.body.data.rental.payment.status).toBe('PAID');
 
-    // Outbox must contain the automated WhatsApp confirmation with the contract code and asset tag
+    // Outbox must contain both the client WhatsApp confirmation and the company warehouse separation order
     const outbox = whatsappProviderService.getOutbox();
-    expect(outbox.length).toBeGreaterThanOrEqual(1);
-    const lastMsg = outbox[outbox.length - 1]!;
-    expect(lastMsg.to).toBe('5511998887766');
-    expect(lastMsg.text).toContain(rental.code);
-    expect(lastMsg.text).toContain('CTP-0001');
+    expect(outbox.length).toBeGreaterThanOrEqual(2);
+    const clientMsg = outbox.find((m) => m.to === '5511998887766');
+    expect(clientMsg).toBeDefined();
+    expect(clientMsg!.text).toContain(rental.code);
+    expect(clientMsg!.text).toContain('CTP-0001');
+
+    const warehouseMsg = outbox[outbox.length - 1]!;
+    expect(warehouseMsg.text).toContain('ORDEM DE SEPARAÇÃO DE ESTOQUE');
+    expect(warehouseMsg.text).toContain(rental.code);
+    expect(warehouseMsg.text).toContain('CTP-0001');
 
     // Sending the exact same webhook event again is idempotently ignored
     const duplicateRes = await request(app)
@@ -741,5 +746,57 @@ describe('Mantovani API — End-to-End Integration Suite', () => {
     expect(createRes.body.data.cashDiscountAmount).toBe(24);
     expect(createRes.body.data.totalAmount).toBe(276);
     expect(createRes.body.data.payment.amount).toBe(276);
+  });
+
+  it('12. POST /api/v1/rentals/:id/activate confirms the contract and sends the equipment separation order to the company WhatsApp number', async () => {
+    const catsRes = await request(app).get('/api/v1/equipment/categories');
+    const prop = catsRes.body.data.find((c: { slug: string }) => c.slug === 'escora-metalica');
+    expect(prop).toBeDefined();
+
+    const createRes = await request(app)
+      .post('/api/v1/rentals')
+      .send({
+        startDate: '2026-12-22',
+        endDate: '2026-12-23',
+        paymentMethod: 'CASH',
+        deliveryTimeSlot: '09:00 - 10:30',
+        items: [{ categoryId: prop.id, quantity: 1 }],
+        client: {
+          cnpj: '52342052000140',
+          companyName: 'Obra Atibaia Engenharia Ltda',
+          email: 'obra@atibaia.com.br',
+          phone: '11977776666',
+        },
+        deliveryAddress: {
+          cep: '12944430',
+          street: 'Rua Bragança Paulista',
+          number: '132',
+          district: 'Centro',
+          city: 'Atibaia',
+          state: 'SP',
+        },
+      });
+    expect(createRes.status).toBe(201);
+    const rentalId = createRes.body.data.id;
+    const rentalCode = createRes.body.data.code;
+    expect(createRes.body.data.status).toBe('PENDING_PAYMENT');
+    expect(createRes.body.data.warehouseWhatsappUrl).toContain('https://wa.me/');
+
+    const activateRes = await request(app)
+      .post(`/api/v1/rentals/${rentalId}/activate`)
+      .send({ companyPhone: '5511999999999' });
+
+    expect(activateRes.status).toBe(200);
+    expect(activateRes.body.data.status).toBe('CONFIRMED');
+    expect(activateRes.body.data.warehouseNotifiedAt).toBeTruthy();
+    expect(activateRes.body.data.warehouseWhatsappUrl).toContain('https://wa.me/5511999999999?text=');
+
+    const outbox = whatsappProviderService.getOutbox();
+    const lastMsg = outbox[outbox.length - 1]!;
+    expect(lastMsg.to).toBe('5511999999999');
+    expect(lastMsg.text).toContain('ORDEM DE SEPARAÇÃO DE ESTOQUE — MANTOVANI');
+    expect(lastMsg.text).toContain(rentalCode);
+    expect(lastMsg.text).toContain('ESC-0001');
+    expect(lastMsg.text).toContain('09:00 - 10:30');
   });
 });

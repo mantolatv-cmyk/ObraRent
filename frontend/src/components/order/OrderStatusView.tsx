@@ -25,7 +25,7 @@ import { AllocatedItemsCard } from '@/components/order/AllocatedItemsCard';
 import { PaymentPanel } from '@/components/order/PaymentPanel';
 import { StatusBadge, StatusTimeline } from '@/components/order/StatusTimeline';
 import { useRentalPolling } from '@/hooks/useRentalPolling';
-import { whatsappLink } from '@/lib/config';
+import { warehouseOrderWhatsappLink, whatsappLink } from '@/lib/config';
 import {
   formatBRL,
   formatDateLong,
@@ -165,10 +165,21 @@ export function OrderStatusView({ id, initialRental, initialError }: OrderStatus
       <StatusTimeline status={rental.status} />
 
       {/* Confirmed Banner */}
-      {rental.status === 'CONFIRMED' ? (
+      {rental.status === 'CONFIRMED' || rental.status === 'ACTIVE' ? (
         <Alert
           tone="success"
-          title="Pagamento confirmado! Seus equipamentos estão separados."
+          title="Locação ativa! Ordem de separação pronta para o estoque."
+          action={
+            <a
+              href={rental.warehouseWhatsappUrl || warehouseOrderWhatsappLink(rental)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-slate-950 shadow-md transition hover:bg-emerald-400"
+            >
+              <MessageCircle aria-hidden className="h-4 w-4" />
+              Enviar Ordem de Separação ao Estoque (WhatsApp)
+            </a>
+          }
         >
           <p>
             Os ativos{' '}

@@ -192,6 +192,13 @@ rentalsRouter.post('/:id/simulate-payment', async (req, res) => {
   res.json({ data: summary });
 });
 
+rentalsRouter.post('/:id/activate', async (req, res) => {
+  const body = (req.body ?? {}) as { companyPhone?: unknown };
+  const companyPhone = typeof body.companyPhone === 'string' && body.companyPhone.trim() ? body.companyPhone.trim() : undefined;
+  const summary = await rentalService.activateAndNotifyWarehouse(req.params.id, companyPhone);
+  res.json({ data: summary });
+});
+
 rentalsRouter.get('/:id/contract', async (req, res) => {
   const doc = await rentalService.getContractDocument(req.params.id);
   res.json({ data: doc });

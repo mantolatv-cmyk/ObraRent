@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Card, CardBody, CardHeader } from '@/components/ui/Card';
 import { useRentalPolling } from '@/hooks/useRentalPolling';
-import { whatsappLink } from '@/lib/config';
+import { warehouseOrderWhatsappLink, whatsappLink } from '@/lib/config';
 import {
   formatBRL,
   formatDateLong,
@@ -134,6 +134,33 @@ export function PaymentStep({ rental, onRentalUpdate, onStartNewRental }: Paymen
               </div>
             </div>
 
+            {/* Warehouse WhatsApp Dispatch Banner */}
+            <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/15 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-bold text-emerald-300">
+                    Ordem de Separação de Estoque gerada para o WhatsApp da empresa
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-200">
+                    Envie o pedido completo com o código do contrato e as tags patrimoniais (
+                    <span className="font-mono text-yellow-300">
+                      {current.items.map((i) => i.assetTag).join(', ')}
+                    </span>
+                    ) para o WhatsApp da Mantovani separar o equipamento imediatamente.
+                  </p>
+                </div>
+                <a
+                  href={current.warehouseWhatsappUrl || warehouseOrderWhatsappLink(current)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-bold text-slate-950 shadow-md transition hover:bg-emerald-400"
+                >
+                  <MessageCircle aria-hidden className="h-4 w-4" />
+                  Enviar Pedido ao Estoque (WhatsApp)
+                </a>
+              </div>
+            </div>
+
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 href={`/pedidos/${encodeURIComponent(current.id)}`}
@@ -150,13 +177,13 @@ export function PaymentStep({ rental, onRentalUpdate, onStartNewRental }: Paymen
                 Ver Contrato &amp; Romaneio (PDF)
               </Link>
               <a
-                href={whatsappLink(`Olá! Acabei de confirmar o pedido ${current.code}.`)}
+                href={current.warehouseWhatsappUrl || warehouseOrderWhatsappLink(current)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={buttonClasses({ variant: 'secondary', size: 'lg' })}
               >
-                <MessageCircle aria-hidden className="h-5 w-5" />
-                WhatsApp
+                <MessageCircle aria-hidden className="h-5 w-5 text-emerald-400" />
+                WhatsApp Estoque
               </a>
               <Button variant="ghost" size="lg" onClick={onStartNewRental}>
                 <Plus aria-hidden className="h-5 w-5" />

@@ -29,6 +29,7 @@ import {
   PIX_KEY_FORMATTED,
   pixProofWhatsappLink,
   SHOW_DEV_SIMULATOR,
+  warehouseOrderWhatsappLink,
 } from '@/lib/config';
 import {
   CASH_DISCOUNT_PCT,
@@ -141,10 +142,14 @@ export function PaymentPanel({
     setSimulating(true);
     setSimError(null);
     try {
-      const updated = await api.simulatePayment(rental.id);
+      const updated = await api.activateRental(rental.id);
       onRentalUpdate?.(updated);
+      if (typeof window !== 'undefined') {
+        const waUrl = updated.warehouseWhatsappUrl || warehouseOrderWhatsappLink(updated);
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+      }
     } catch (e) {
-      setSimError(errorMessage(e, 'Não foi possível simular o pagamento.'));
+      setSimError(errorMessage(e, 'Não foi possível ativar a locação e notificar o estoque.'));
     } finally {
       setSimulating(false);
     }
@@ -386,15 +391,26 @@ export function PaymentPanel({
               </div>
             </div>
 
-            <a
-              href={whatsappProofUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-base font-semibold text-slate-950 shadow-md transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-            >
-              <MessageCircle aria-hidden className="h-5 w-5" />
-              Confirmar entrega / Solicitar troco pelo WhatsApp
-            </a>
+            <div className="flex flex-col gap-2.5 sm:flex-row">
+              <Button
+                variant="primary"
+                size="lg"
+                loading={simulating}
+                onClick={handleSimulatePayment}
+                className="flex-1 bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+              >
+                <MessageCircle aria-hidden className="h-5 w-5" />
+                Ativar Locação &amp; Enviar Pedido ao Estoque (WhatsApp)
+              </Button>
+              <a
+                href={whatsappProofUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={buttonClasses({ variant: 'secondary', size: 'lg' })}
+              >
+                Solicitar troco no WhatsApp
+              </a>
+            </div>
           </div>
         ) : (
           <div className="space-y-4 rounded-2xl border border-white/10 bg-slate-950/65 p-5">
@@ -470,15 +486,15 @@ export function PaymentPanel({
         ) : null}
 
         {SHOW_DEV_SIMULATOR && rental.status === 'PENDING_PAYMENT' ? (
-          <div className="rounded-2xl border border-dashed border-yellow-400/45 bg-yellow-400/25 p-4 backdrop-blur-md">
+          <div className="rounded-2xl border border-dashed border-emerald-400/45 bg-emerald-500/15 p-4 backdrop-blur-md">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-sm text-yellow-400">
+              <div className="text-sm text-emerald-300">
                 <p className="flex items-center gap-1.5 font-semibold text-white">
-                  <FlaskConical aria-hidden className="h-4 w-4 text-yellow-400" />
-                  Ambiente de teste / homologação
+                  <FlaskConical aria-hidden className="h-4 w-4 text-emerald-400" />
+                  Ativação imediata do contrato &amp; envio ao estoque
                 </p>
                 <p className="mt-0.5 text-slate-300">
-                  Dispare o webhook de pagamento aprovado para testar a confirmação instantânea e alocação de ativos.
+                  Ative a locação agora e envie automaticamente a Ordem de Separação com as tags patrimoniais para o WhatsApp da empresa.
                 </p>
               </div>
               <Button
@@ -486,9 +502,10 @@ export function PaymentPanel({
                 size="md"
                 loading={simulating}
                 onClick={handleSimulatePayment}
-                className="shrink-0"
+                className="shrink-0 border-emerald-400/50 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30"
               >
-                Simular aprovação de pagamento (ambiente de teste)
+                <MessageCircle aria-hidden className="h-4 w-4 text-emerald-400" />
+                Ativar Locação &amp; Enviar ao Estoque (WhatsApp)
               </Button>
             </div>
             {simError ? (

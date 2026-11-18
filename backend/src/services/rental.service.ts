@@ -89,6 +89,59 @@ function generateRentalCode(): string {
   return `LOC-${hex}`;
 }
 
+export function buildWarehouseOrderWhatsappText(summary: RentalSummary): string {
+  const addr = summary.deliveryAddress;
+  const methodLabel =
+    summary.payment?.method === 'CASH'
+      ? 'Dinheiro na Entrega (8% OFF)'
+      : summary.payment?.method === 'PIX'
+        ? 'Pix'
+        : summary.payment?.method === 'CREDIT_CARD'
+          ? 'Cartão de Crédito'
+          : 'Boleto Bancário';
+  const itemsList = summary.items
+    .map((i) => `• 1x *${i.categoryName}* — Patrimônio: *${i.assetTag}* (${formatBRL(i.agreedDailyRate)}/dia)`)
+    .join('\n');
+  const contractUrl = `${env.PUBLIC_APP_URL.replace(/\/$/, '')}/pedidos/${summary.id}/contrato`;
+
+  return [
+    `🏭 *ORDEM DE SEPARAÇÃO DE ESTOQUE — MANTOVANI*`,
+    `📄 *Contrato Ativo:* *${summary.code}*`,
+    `📌 *Status:* ${summary.status === 'CONFIRMED' || summary.status === 'ACTIVE' ? 'LOCAÇÃO ATIVA / SEPARAR IMEDIATAMENTE' : 'PEDIDO REGISTRADO'}`,
+    ``,
+    `👤 *CLIENTE / LOCATÁRIO:*`,
+    `• *Nome/Empresa:* ${summary.client.companyName}`,
+    `• *CPF/CNPJ:* ${summary.client.cnpj}`,
+    ``,
+    `🚜 *EQUIPAMENTOS PARA SEPARAR NO ESTOQUE (${summary.items.length} un.):*`,
+    itemsList,
+    ``,
+    `📅 *PERÍODO & JANELA DE ENTREGA:*`,
+    `• *Vigência:* ${formatBrDate(summary.startDate)} a ${formatBrDate(summary.endDate)} (${summary.days} diária(s))`,
+    ...(summary.deliveryTimeSlot ? [`• *Horário Agendado:* *${summary.deliveryTimeSlot}*`] : []),
+    ``,
+    `📍 *ENDEREÇO DE ENTREGA NA OBRA:*`,
+    `• ${addr.street}, ${addr.number}${addr.complement ? ` (${addr.complement})` : ''}`,
+    `• ${addr.district} — ${addr.city}/${addr.state} — CEP ${addr.cep}`,
+    ...(addr.reference ? [`• *Referência:* ${addr.reference}`] : []),
+    ``,
+    `💰 *FINANCEIRO:*`,
+    `• *Forma de Pagamento:* ${methodLabel}`,
+    ...(summary.cashDiscountAmount && summary.cashDiscountAmount > 0
+      ? [`• *Desconto Dinheiro (8%):* -${formatBRL(summary.cashDiscountAmount)}`]
+      : []),
+    `• *Valor Total:* *${formatBRL(summary.totalAmount)}*`,
+    ``,
+    `🔗 *Contrato & Romaneio:* ${contractUrl}`,
+  ].join('\n');
+}
+
+export function buildWarehouseWhatsappUrl(summary: RentalSummary): string {
+  const companyPhone = env.COMPANY_WHATSAPP_NUMBER.replace(/\D/g, '') || '5511999999999';
+  const text = buildWarehouseOrderWhatsappText(summary);
+  return `https://wa.me/${companyPhone}?text=${encodeURIComponent(text)}`;
+}
+
 export class RentalService {
   async quote(input: QuoteInput, db: Queryable = pool): Promise<Quote> {
     const days = validateRentalPeriod(input.startDate, input.endDate);
@@ -359,7 +412,7 @@ export class RentalService {
           paidAt: paymentRecord.paidAt,
         };
 
-        return {
+        const createdSummary: RentalSummary = {
           id: header.id,
           code,
           status: 'PENDING_PAYMENT',
@@ -385,6 +438,8 @@ export class RentalService {
           deliveryTimeSlot: input.deliveryTimeSlot ?? null,
           createdAt: header.createdAt,
         };
+        createdSummary.warehouseWhatsappUrl = buildWarehouseWhatsappUrl(createdSummary);
+        return createdSummary;
       });
     } catch (err) {
       if (pgErrorCode(err) === PG_ERRORS.EXCLUSION_VIOLATION) {
@@ -470,11 +525,11 @@ export class RentalService {
       issuedAt: new Date().toISOString(),
       documentNumber: `CTR-${header.code.replace('LOC-', '')}-${header.start_date.slice(0, 4)}`,
       lessor: {
-        companyName: 'Mantovani Locações e Equipamentos para Construção S.A.',
+        companyName: 'Máquinas para Concreto Atibaiense Ltda',
         tradeName: 'Mantovani',
-        cnpj: '45.987.654/0001-23',
-        address: 'Av. Presidente Wilson, 4200 — Mooca, São Paulo/SP — CEP 03107-000',
-        phone: '+55 (11) 3003-4000',
+        cnpj: '52.342.052/0001-40',
+        address: 'Rua Bragança Paulista, 132 — Centro, Atibaia/SP — CEP 12944-430',
+        phone: '+55 (11) 99999-9999',
         email: 'contratos@mantovani.com.br',
       },
       lessee: {
@@ -597,7 +652,7 @@ export class RentalService {
     const cashDiscountAmount = isCashPayment && subtotalVal > totalVal ? round2(subtotalVal - totalVal) : 0;
     const cashDiscountPct = cashDiscountAmount > 0 ? CASH_PAYMENT_DISCOUNT_PCT : 0;
 
-    return {
+    const summaryObj: RentalSummary = {
       id: header.id,
       code: header.code,
       status: header.status,
@@ -626,6 +681,8 @@ export class RentalService {
           ? header.created_at.toISOString()
           : new Date(header.created_at).toISOString(),
     };
+    summaryObj.warehouseWhatsappUrl = buildWarehouseWhatsappUrl(summaryObj);
+    return summaryObj;
   }
 
   /**
@@ -674,7 +731,7 @@ export class RentalService {
       return { processed: false };
     }
 
-    let notifyTarget: { phone: string; summary: RentalSummary } | null = null;
+    let notifyTarget: { phone: string | null; summary: RentalSummary } | null = null;
 
     const outcome = await withTransaction(async (tx: TxClient) => {
       const isNewEvent = await paymentRepository.recordWebhookEvent(tx, {
@@ -715,8 +772,8 @@ export class RentalService {
         const summary = await this.assembleSummary(refreshedHeader!, itemRows, updatedPayment);
 
         const contractorPhone = header.contact_phone ?? header.client_phone;
-        if (!wasAlreadyConfirmed && contractorPhone) {
-          notifyTarget = { phone: contractorPhone, summary };
+        if (!wasAlreadyConfirmed) {
+          notifyTarget = { phone: contractorPhone ?? null, summary };
         }
 
         return { processed: true, rental: summary };
@@ -748,30 +805,63 @@ export class RentalService {
     });
 
     if (notifyTarget) {
-      const { phone, summary } = notifyTarget as { phone: string; summary: RentalSummary };
+      const { phone, summary } = notifyTarget as { phone: string | null; summary: RentalSummary };
       const assetList = summary.items.map((i) => `• ${i.categoryName} — Patrimônio *${i.assetTag}*`).join('\n');
       const addr = summary.deliveryAddress;
-      const confirmationText = [
-        `✅ *Pagamento confirmado! Contrato ${summary.code}*`,
-        ``,
-        `Olá, *${summary.client.companyName}*! Seu pedido foi aprovado e os equipamentos físicos já estão reservados para sua obra:`,
-        assetList,
-        ``,
-        `📅 *Período:* ${formatBrDate(summary.startDate)} a ${formatBrDate(summary.endDate)} (${summary.days} dia(s))`,
-        `📍 *Entrega:* ${addr.street}, ${addr.number} — ${addr.district}, ${addr.city}/${addr.state} (CEP ${addr.cep})`,
-        `💰 *Total pago:* ${formatBRL(summary.totalAmount)}`,
-        ``,
-        `Nossa logística já iniciou a separação para despacho. Acompanhe em: ${env.PUBLIC_APP_URL.replace(/\/$/, '')}/pedidos/${summary.id}`,
-      ].join('\n');
 
+      // 1. Envia confirmação para o cliente / locatário
+      if (phone) {
+        const confirmationText = [
+          `✅ *Pagamento confirmado! Contrato ${summary.code}*`,
+          ``,
+          `Olá, *${summary.client.companyName}*! Seu pedido foi aprovado e os equipamentos físicos já estão reservados para sua obra:`,
+          assetList,
+          ``,
+          `📅 *Período:* ${formatBrDate(summary.startDate)} a ${formatBrDate(summary.endDate)} (${summary.days} dia(s))`,
+          `📍 *Entrega:* ${addr.street}, ${addr.number} — ${addr.district}, ${addr.city}/${addr.state} (CEP ${addr.cep})`,
+          `💰 *Total pago:* ${formatBRL(summary.totalAmount)}`,
+          ``,
+          `Nossa logística já iniciou a separação para despacho. Acompanhe em: ${env.PUBLIC_APP_URL.replace(/\/$/, '')}/pedidos/${summary.id}`,
+        ].join('\n');
+
+        try {
+          await whatsappProviderService.sendText(phone, confirmationText);
+        } catch (err) {
+          logger.error({ err, rentalId: summary.id, phone }, 'Failed to send WhatsApp confirmation notification');
+        }
+      }
+
+      // 2. Dispara a Ordem de Separação de Estoque para o WhatsApp da empresa
+      const companyPhone = env.COMPANY_WHATSAPP_NUMBER.replace(/\D/g, '') || '5511999999999';
+      const warehouseText = buildWarehouseOrderWhatsappText(summary);
       try {
-        await whatsappProviderService.sendText(phone, confirmationText);
+        await whatsappProviderService.sendText(companyPhone, warehouseText);
+        summary.warehouseNotifiedAt = new Date().toISOString();
       } catch (err) {
-        logger.error({ err, rentalId: summary.id, phone }, 'Failed to send WhatsApp confirmation notification');
+        logger.error({ err, rentalId: summary.id, companyPhone }, 'Failed to send WhatsApp warehouse separation order');
       }
     }
 
     return outcome;
+  }
+
+  async activateAndNotifyWarehouse(rentalId: string, customCompanyPhone?: string): Promise<RentalSummary> {
+    let summary = await this.getRentalById(rentalId);
+    if (summary.status === 'PENDING_PAYMENT') {
+      summary = await this.simulatePaymentApproval(rentalId);
+    } else {
+      const companyPhone = (customCompanyPhone || env.COMPANY_WHATSAPP_NUMBER).replace(/\D/g, '') || '5511999999999';
+      const warehouseText = buildWarehouseOrderWhatsappText(summary);
+      try {
+        await whatsappProviderService.sendText(companyPhone, warehouseText);
+      } catch (err) {
+        logger.error({ err, rentalId: summary.id, companyPhone }, 'Failed to send WhatsApp warehouse order');
+      }
+    }
+    const targetPhone = (customCompanyPhone || env.COMPANY_WHATSAPP_NUMBER).replace(/\D/g, '') || '5511999999999';
+    summary.warehouseWhatsappUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(buildWarehouseOrderWhatsappText(summary))}`;
+    summary.warehouseNotifiedAt = new Date().toISOString();
+    return summary;
   }
 
   async cancelRental(rentalId: string): Promise<RentalSummary> {

@@ -57,6 +57,7 @@ const EnvSchema = z.object({
   HTTP_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),
 
   // WhatsApp
+  COMPANY_WHATSAPP_NUMBER: z.string().default('5511999999999'),
   MESSAGING_PROVIDER: z.enum(['console', 'evolution', 'meta']).default('console'),
   WHATSAPP_WEBHOOK_TOKEN: z.string().optional(),
   WHATSAPP_SESSION_TIMEOUT_MINUTES: z.coerce.number().int().positive().default(120),

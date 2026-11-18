@@ -133,7 +133,14 @@ export const resetWhatsappSession = (phone: string, opts: Opts = {}) =>
   );
 
 export const simulatePayment = (id: string, opts: Opts = {}) =>
-  request<RentalSummary>(`/dev/rentals/${encodeURIComponent(id)}/simulate-payment`, { ...opts, method: 'POST' });
+  request<RentalSummary>(`/rentals/${encodeURIComponent(id)}/simulate-payment`, { ...opts, method: 'POST' });
+
+export const activateRental = (id: string, companyPhone?: string, opts: Opts = {}) =>
+  request<RentalSummary>(`/rentals/${encodeURIComponent(id)}/activate`, {
+    ...opts,
+    method: 'POST',
+    body: companyPhone ? { companyPhone } : {},
+  });
 
 export const login = (body: LoginPayload, opts: Opts = {}) =>
   request<AuthResponse>('/auth/login', { ...opts, method: 'POST', body });
@@ -187,6 +194,7 @@ export const api = {
   register,
   getMe,
   simulatePayment,
+  activateRental,
   listRentals,
   dispatchRental,
   returnRental,

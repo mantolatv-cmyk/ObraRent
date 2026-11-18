@@ -101,6 +101,8 @@ export interface RentalSummary extends Quote {
   items: RentalItem[];
   payment: PaymentInfo | null;
   deliveryTimeSlot?: string | null;
+  warehouseWhatsappUrl?: string | null;
+  warehouseNotifiedAt?: string | null;
   createdAt: string;
 }
 

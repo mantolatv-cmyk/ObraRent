@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   FileText,
   HardHat,
+  MessageCircle,
   Printer,
   RefreshCw,
   ShieldAlert,
@@ -21,6 +22,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { api, errorMessage } from '@/lib/api';
+import { warehouseOrderWhatsappLink } from '@/lib/config';
 import {
   formatBRL,
   formatDateLong,
@@ -40,6 +42,8 @@ export default function RentalContractPage() {
   const [doc, setDoc] = useState<ContractDocument | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activating, setActivating] = useState(false);
+  const [activateFeedback, setActivateFeedback] = useState<string | null>(null);
 
   const loadContract = useCallback(async () => {
     if (!id) return;
@@ -62,6 +66,30 @@ export default function RentalContractPage() {
   const handlePrint = () => {
     if (typeof window !== 'undefined') {
       window.print();
+    }
+  };
+
+  const handleActivateAndDispatchWarehouse = async () => {
+    if (!doc) return;
+    setActivating(true);
+    setActivateFeedback(null);
+    try {
+      const updatedRental = await api.activateRental(doc.rental.id);
+      setDoc({ ...doc, rental: updatedRental });
+      setActivateFeedback(
+        'Contrato ativado! Ordem de separação enviada para o WhatsApp da empresa.'
+      );
+      if (typeof window !== 'undefined') {
+        const waUrl =
+          updatedRental.warehouseWhatsappUrl || warehouseOrderWhatsappLink(updatedRental);
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+      }
+    } catch (err) {
+      setActivateFeedback(
+        errorMessage(err, 'Não foi possível ativar a locação e notificar o estoque.')
+      );
+    } finally {
+      setActivating(false);
     }
   };
 
@@ -174,7 +202,19 @@ export default function RentalContractPage() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="md"
+              loading={activating}
+              onClick={handleActivateAndDispatchWarehouse}
+              className="border-emerald-400/50 bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400"
+            >
+              <MessageCircle aria-hidden className="h-4 w-4" />
+              {rental.status === 'PENDING_PAYMENT'
+                ? 'Ativar Locação & Enviar ao Estoque (WhatsApp)'
+                : 'Enviar Ordem ao Estoque (WhatsApp)'}
+            </Button>
             <span className="hidden text-xs text-slate-400 sm:inline">Página única A4</span>
             <Button variant="primary" size="md" onClick={handlePrint}>
               <Printer aria-hidden className="h-4 w-4" />
@@ -182,6 +222,12 @@ export default function RentalContractPage() {
             </Button>
           </div>
         </div>
+
+        {activateFeedback ? (
+          <div className="no-print rounded-2xl border border-emerald-400/40 bg-emerald-500/15 px-4 py-3 text-sm font-medium text-emerald-200">
+            {activateFeedback}
+          </div>
+        ) : null}
 
         {/* Single-Page Contract Sheet: Dark Glassmorphism on Screen, Crisp 1-Page Document on Print */}
         <article className="contract-sheet space-y-3.5 rounded-2xl border border-yellow-400/25 bg-slate-900/80 p-5 text-slate-100 backdrop-blur-xl shadow-[0_8px_40px_rgba(0,0,0,0.55)] sm:p-7 print:space-y-2 print:border-slate-300 print:bg-white print:p-3 print:text-slate-900">

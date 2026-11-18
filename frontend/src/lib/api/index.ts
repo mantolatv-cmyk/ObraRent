@@ -1,4 +1,5 @@
 export {
+  activateRental,
   api,
   cancelRental,
   dispatchRental,
