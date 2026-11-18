@@ -3,10 +3,23 @@ import type { ApiErrorBody } from '@/lib/types';
 
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1').replace(/\/+$/, '');
 
-/** Server-side rendering may use an internal URL (e.g. docker network) when provided. */
+/**
+ * Returns the base API URL:
+ * - On Vercel (SSR): uses internal service URL or VERCEL_URL with /api/v1.
+ * - In browser (client-side): if NEXT_PUBLIC_API_URL is unset, defaults to relative '/api/v1' on same domain.
+ * - Local development: defaults to 'http://localhost:4000/api/v1'.
+ */
 function baseUrl(): string {
-  if (typeof window === 'undefined' && process.env.API_INTERNAL_URL) {
-    return process.env.API_INTERNAL_URL.replace(/\/+$/, '');
+  if (typeof window === 'undefined') {
+    if (process.env.API_INTERNAL_URL) {
+      const raw = process.env.API_INTERNAL_URL.replace(/\/+$/, '');
+      return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
+    }
+    if (process.env.VERCEL_URL) {
+      return `https://${process.env.VERCEL_URL}/api/v1`;
+    }
+  } else if (!process.env.NEXT_PUBLIC_API_URL) {
+    return '/api/v1';
   }
   return API_URL;
 }

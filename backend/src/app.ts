@@ -20,9 +20,10 @@ export function createApp(): Express {
   const allowedOrigins = env.CORS_ORIGINS.split(',')
     .map((o) => o.trim())
     .filter(Boolean);
+  const isVercel = Boolean(process.env.VERCEL);
   app.use(
     cors({
-      origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+      origin: isVercel ? true : allowedOrigins.length > 0 ? allowedOrigins : true,
       credentials: true,
     }),
   );
@@ -56,3 +57,5 @@ export function createApp(): Express {
 
   return app;
 }
+
+export default createApp();

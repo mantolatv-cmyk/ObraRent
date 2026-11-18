@@ -4,11 +4,11 @@ import { pool } from './db/pool';
 import { logger } from './lib/logger';
 import { rentalRepository } from './repositories/rental.repository';
 
+export const app = createApp();
+
 async function bootstrap(): Promise<void> {
   // Warm up database connection / embedded PGlite instance on boot
   await pool.query('SELECT 1');
-
-  const app = createApp();
 
   // Periodic sweeper that expires unpaid reservations after PAYMENT_HOLD_MINUTES
   const sweeper = setInterval(() => {
@@ -41,7 +41,18 @@ async function bootstrap(): Promise<void> {
   process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-bootstrap().catch((err: unknown) => {
-  logger.fatal({ err }, 'Failed to start server');
-  process.exit(1);
-});
+// In standard server environments (local dev, docker, standalone), start listening.
+// In Vercel serverless environments, Vercel invokes the exported app instance directly.
+if (!process.env.VERCEL) {
+  bootstrap().catch((err: unknown) => {
+    logger.fatal({ err }, 'Failed to start server');
+    process.exit(1);
+  });
+}
+
+export default app;
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = app;
+  module.exports.default = app;
+}

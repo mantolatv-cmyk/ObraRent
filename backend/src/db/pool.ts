@@ -8,6 +8,13 @@ types.setTypeParser(1082, (value: string) => value);
 
 const useEmbeddedPg = env.NODE_ENV === 'development' && process.env.USE_EXTERNAL_PG !== 'true';
 
+const isCloudOrSsl =
+  env.DB_SSL ||
+  Boolean(env.DATABASE_URL?.includes('sslmode=require')) ||
+  Boolean(env.DATABASE_URL?.includes('neon.tech')) ||
+  Boolean(env.DATABASE_URL?.includes('supabase.co')) ||
+  Boolean(process.env.VERCEL);
+
 const pgPool = useEmbeddedPg
   ? null
   : new Pool({
@@ -15,7 +22,7 @@ const pgPool = useEmbeddedPg
       max: env.DB_POOL_MAX,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 10_000,
-      ssl: env.DB_SSL ? { rejectUnauthorized: false } : undefined,
+      ssl: isCloudOrSsl ? { rejectUnauthorized: false } : undefined,
       application_name: 'obra-rent-api',
     });
 
