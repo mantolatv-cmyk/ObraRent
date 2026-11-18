@@ -1,4 +1,7 @@
 import { createApp } from './create-app';
 
 const app = createApp();
-export default app;
+(app as unknown as { default: typeof app; app: typeof app }).default = app;
+(app as unknown as { default: typeof app; app: typeof app }).app = app;
+
+export = app;

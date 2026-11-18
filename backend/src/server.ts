@@ -4,7 +4,9 @@ import { pool } from './db/pool';
 import { logger } from './lib/logger';
 import { rentalRepository } from './repositories/rental.repository';
 
-export const app = createApp();
+const app = createApp();
+(app as unknown as { default: typeof app; app: typeof app }).default = app;
+(app as unknown as { default: typeof app; app: typeof app }).app = app;
 
 async function bootstrap(): Promise<void> {
   // Warm up database connection / embedded PGlite instance on boot
@@ -50,9 +52,4 @@ if (!process.env.VERCEL) {
   });
 }
 
-export default app;
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = app;
-  module.exports.default = app;
-}
+export = app;
