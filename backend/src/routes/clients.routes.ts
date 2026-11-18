@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import express from 'express';
+const { Router } = express;
 import { clientService } from '../services/client.service';
 import { rentalService } from '../services/rental.service';
 

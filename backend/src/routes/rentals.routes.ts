@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import express from 'express';
+const { Router } = express;
 import { z } from 'zod';
 import { onlyDigits } from '../lib/cnpj';
 import { ValidationError } from '../lib/errors';

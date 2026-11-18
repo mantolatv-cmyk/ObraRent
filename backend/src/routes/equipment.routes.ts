@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import express from 'express';
+const { Router } = express;
 import { ValidationError } from '../lib/errors';
 import { equipmentService } from '../services/equipment.service';
 import type { EquipmentStatus } from '../types/domain';

@@ -1,8 +1,10 @@
-import { Pool, types, type PoolClient, type QueryResult, type QueryResultRow } from 'pg';
+import pg, { type Pool, type PoolClient, type QueryResult, type QueryResultRow } from 'pg';
 import { env } from '../config/env';
 import { logger } from '../lib/logger';
 import { embeddedPool } from './embedded-pg';
 import { INIT_SQL, SEED_SQL } from './sql-bundle';
+
+const { Pool: PgPool, types } = pg;
 
 // Return DATE columns as plain 'YYYY-MM-DD' strings (never shift to local tz).
 types.setTypeParser(1082, (value: string) => value);
@@ -25,7 +27,7 @@ const isCloudOrSsl =
 
 const pgPool = useEmbeddedByDefault
   ? null
-  : new Pool({
+  : new PgPool({
       connectionString: env.DATABASE_URL,
       max: env.DB_POOL_MAX,
       idleTimeoutMillis: 30_000,

@@ -1,4 +1,5 @@
-import { Router, type Request, type Response } from 'express';
+import express, { type Request, type Response } from 'express';
+const { Router } = express;
 import { verifyAuthToken } from '../lib/auth';
 import { UnauthorizedError, ValidationError } from '../lib/errors';
 import { clientService } from '../services/client.service';

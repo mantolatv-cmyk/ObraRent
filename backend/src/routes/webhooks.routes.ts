@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import express from 'express';
+const { Router } = express;
 import { env } from '../config/env';
 import { pool } from '../db/pool';
 import { UnauthorizedError, ValidationError } from '../lib/errors';

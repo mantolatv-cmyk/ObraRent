@@ -1,4 +1,5 @@
-import { Router } from 'express';
+import express from 'express';
+const { Router } = express;
 import { rentalService } from '../services/rental.service';
 
 export const devRouter = Router();
