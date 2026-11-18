@@ -1,7 +1,6 @@
 import { Pool, types, type PoolClient, type QueryResult, type QueryResultRow } from 'pg';
 import { env } from '../config/env';
 import { logger } from '../lib/logger';
-import { embeddedPool } from './embedded-pg';
 
 // Return DATE columns as plain 'YYYY-MM-DD' strings (never shift to local tz).
 types.setTypeParser(1082, (value: string) => value);
@@ -30,7 +29,11 @@ pgPool?.on('error', (err) => {
   logger.error({ err }, 'Unexpected idle PostgreSQL client error');
 });
 
-export const pool: Pool = (useEmbeddedPg ? (embeddedPool as unknown as Pool) : pgPool!);
+export const pool: Pool = (
+  useEmbeddedPg
+    ? ((require('./embedded-pg') as typeof import('./embedded-pg')).embeddedPool as unknown as Pool)
+    : pgPool!
+);
 
 /**
  * Minimal query surface shared by Pool and PoolClient, so repositories work both
