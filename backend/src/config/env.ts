@@ -8,6 +8,14 @@ const bool = z
   .enum(['true', 'false', '1', '0'])
   .transform((v) => v === 'true' || v === '1');
 
+const defaultPublicUrl = process.env.PUBLIC_APP_URL
+  ? process.env.PUBLIC_APP_URL
+  : process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : 'http://localhost:3000';
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
@@ -18,7 +26,7 @@ const EnvSchema = z.object({
   DB_SSL: bool.default(false),
 
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
-  PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
+  PUBLIC_APP_URL: z.string().url().default(defaultPublicUrl),
 
   // Rental rules
   PAYMENT_HOLD_MINUTES: z.coerce.number().int().min(5).max(24 * 60).default(30),

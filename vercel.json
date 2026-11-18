@@ -13,7 +13,7 @@
           "type": "service",
           "service": "backend",
           "format": "url",
-          "env": "API_INTERNAL_URL"
+          "env": "BACKEND_URL"
         }
       ]
     }

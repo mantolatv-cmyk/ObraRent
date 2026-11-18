@@ -11,14 +11,17 @@ export const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:400
  */
 function baseUrl(): string {
   if (typeof window === 'undefined') {
-    if (process.env.API_INTERNAL_URL) {
-      const raw = process.env.API_INTERNAL_URL.replace(/\/+$/, '');
+    // In Vercel Services, the backend internal URL is injected via the service binding as BACKEND_URL
+    const boundUrl = process.env.BACKEND_URL || process.env.API_INTERNAL_URL;
+    if (boundUrl) {
+      const raw = boundUrl.replace(/\/+$/, '');
       return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
     }
     if (process.env.VERCEL_URL) {
       return `https://${process.env.VERCEL_URL}/api/v1`;
     }
   } else if (!process.env.NEXT_PUBLIC_API_URL) {
+    // In the browser on Vercel: use relative path '/api/v1' routed by Vercel rewrites to avoid CORS
     return '/api/v1';
   }
   return API_URL;
