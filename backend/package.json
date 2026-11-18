@@ -19,18 +19,17 @@
     "license": "UNLICENSED",
     "type": "commonjs",
     "dependencies": {
-        "@electric-sql/pglite": "^0.5.16",
-        "@electric-sql/pglite-socket": "^0.2.19",
         "axios": "^1.21.1",
         "cors": "^2.8.6",
         "express": "^5.3.0",
         "helmet": "^8.3.0",
         "pg": "^8.23.1",
-        "pino": "^10.4.0",
         "qrcode": "^1.5.4",
         "zod": "^4.6.7"
     },
     "devDependencies": {
+        "@electric-sql/pglite": "^0.5.16",
+        "@electric-sql/pglite-socket": "^0.2.19",
         "@types/cors": "^2.8.19",
         "@types/express": "^5.0.6",
         "@types/node": "^26.6.6",

@@ -1,16 +1,59 @@
-import pino from 'pino';
 import { env, isProduction } from '../config/env';
 
-export const logger = pino({
-  level: env.NODE_ENV === 'test' ? 'silent' : env.LOG_LEVEL,
-  base: { service: 'obra-rent-api' },
-  redact: {
-    paths: ['req.headers.authorization', 'req.headers["asaas-access-token"]', 'req.headers["x-webhook-token"]', '*.apiKey', '*.accessToken'],
-    censor: '[redacted]',
-  },
-  ...(isProduction
-    ? {}
-    : { transport: { target: 'pino-pretty', options: { colorize: true, translateTime: 'HH:MM:ss', ignore: 'pid,hostname,service' } } }),
-});
+type LogFn = (objOrMsg: unknown, msg?: string) => void;
 
-export type Logger = typeof logger;
+export interface Logger {
+  fatal: LogFn;
+  error: LogFn;
+  warn: LogFn;
+  info: LogFn;
+  debug: LogFn;
+  trace: LogFn;
+}
+
+const silent = env.NODE_ENV === 'test';
+
+function formatLog(level: string, objOrMsg: unknown, msg?: string): string {
+  const time = new Date().toISOString();
+  if (typeof objOrMsg === 'string') {
+    return isProduction
+      ? JSON.stringify({ level, time, service: 'obra-rent-api', msg: objOrMsg })
+      : `[${time.slice(11, 19)}] ${level.toUpperCase()}: ${objOrMsg}`;
+  }
+  if (objOrMsg && typeof objOrMsg === 'object') {
+    const raw = objOrMsg as Record<string, unknown>;
+    const serialized: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(raw)) {
+      if (v instanceof Error) {
+        serialized[k] = { type: v.name, message: v.message, stack: v.stack };
+      } else {
+        serialized[k] = v;
+      }
+    }
+    return isProduction
+      ? JSON.stringify({ level, time, service: 'obra-rent-api', ...serialized, msg: msg ?? '' })
+      : `[${time.slice(11, 19)}] ${level.toUpperCase()}: ${msg ?? ''} ${JSON.stringify(serialized)}`;
+  }
+  return `[${time.slice(11, 19)}] ${level.toUpperCase()}: ${String(msg ?? objOrMsg)}`;
+}
+
+export const logger: Logger = {
+  fatal(objOrMsg, msg) {
+    if (!silent) console.error(formatLog('fatal', objOrMsg, msg));
+  },
+  error(objOrMsg, msg) {
+    if (!silent) console.error(formatLog('error', objOrMsg, msg));
+  },
+  warn(objOrMsg, msg) {
+    if (!silent) console.warn(formatLog('warn', objOrMsg, msg));
+  },
+  info(objOrMsg, msg) {
+    if (!silent) console.log(formatLog('info', objOrMsg, msg));
+  },
+  debug(objOrMsg, msg) {
+    if (!silent && env.LOG_LEVEL === 'debug') console.log(formatLog('debug', objOrMsg, msg));
+  },
+  trace(objOrMsg, msg) {
+    if (!silent && env.LOG_LEVEL === 'trace') console.log(formatLog('trace', objOrMsg, msg));
+  },
+};
