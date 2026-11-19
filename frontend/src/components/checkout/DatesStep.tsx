@@ -302,10 +302,10 @@ export function DatesStep({
           title={
             <span className="flex items-center gap-2">
               <Clock aria-hidden="true" className="h-5 w-5 text-yellow-400" />
-              Horário de entrega na obra
+              Horário de entrega na obra (07:30 às 16:30)
             </span>
           }
-          description={`Janelas de despacho para ${formatDateLong(startDate)}. A capacidade de cada horário é proporcional à frota física operacional.`}
+          description={`Opções de entrega de meia em meia hora para ${formatDateLong(startDate)}. A capacidade de cada horário é proporcional à frota física operacional.`}
         />
         <CardBody className="space-y-4">
           {slotsError ? (
@@ -315,14 +315,14 @@ export function DatesStep({
           ) : null}
 
           {loadingSlots && timeSlots.length === 0 ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} className="h-28 w-full rounded-2xl" />
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-2xl" />
               ))}
             </div>
           ) : (
             <div
-              className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+              className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
               role="radiogroup"
               aria-label="Horário de entrega na obra"
             >
@@ -341,7 +341,7 @@ export function DatesStep({
                       if (isAvailable) onDeliveryTimeSlotChange(slot.slot);
                     }}
                     className={cn(
-                      'relative flex flex-col justify-between rounded-2xl border p-4 text-left transition-all duration-200',
+                      'relative flex flex-col justify-between rounded-xl border p-3 text-left transition-all duration-200',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400',
                       isSelected
                         ? 'border-yellow-400 bg-yellow-400/20 text-white shadow-[0_0_24px_rgba(250,204,21,0.25)] ring-1 ring-yellow-400'

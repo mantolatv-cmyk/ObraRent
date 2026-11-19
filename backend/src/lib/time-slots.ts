@@ -6,12 +6,25 @@ export interface TimeSlotDef {
 }
 
 export const STANDARD_TIME_SLOTS: TimeSlotDef[] = [
-  { slot: '07:30 - 09:00', label: '07:30 às 09:00', period: 'MANHA', periodLabel: 'Manhã (1ª Viagem)' },
-  { slot: '09:00 - 10:30', label: '09:00 às 10:30', period: 'MANHA', periodLabel: 'Manhã (2ª Viagem)' },
-  { slot: '10:30 - 12:00', label: '10:30 às 12:00', period: 'MANHA', periodLabel: 'Manhã (3ª Viagem)' },
-  { slot: '13:00 - 14:30', label: '13:00 às 14:30', period: 'TARDE', periodLabel: 'Tarde (1ª Viagem)' },
-  { slot: '14:30 - 16:00', label: '14:30 às 16:00', period: 'TARDE', periodLabel: 'Tarde (2ª Viagem)' },
-  { slot: '16:00 - 17:30', label: '16:00 às 17:30', period: 'TARDE', periodLabel: 'Tarde (3ª Viagem)' },
+  { slot: '07:30', label: '07:30', period: 'MANHA', periodLabel: 'Manhã · 07:30' },
+  { slot: '08:00', label: '08:00', period: 'MANHA', periodLabel: 'Manhã · 08:00' },
+  { slot: '08:30', label: '08:30', period: 'MANHA', periodLabel: 'Manhã · 08:30' },
+  { slot: '09:00', label: '09:00', period: 'MANHA', periodLabel: 'Manhã · 09:00' },
+  { slot: '09:30', label: '09:30', period: 'MANHA', periodLabel: 'Manhã · 09:30' },
+  { slot: '10:00', label: '10:00', period: 'MANHA', periodLabel: 'Manhã · 10:00' },
+  { slot: '10:30', label: '10:30', period: 'MANHA', periodLabel: 'Manhã · 10:30' },
+  { slot: '11:00', label: '11:00', period: 'MANHA', periodLabel: 'Manhã · 11:00' },
+  { slot: '11:30', label: '11:30', period: 'MANHA', periodLabel: 'Manhã · 11:30' },
+  { slot: '12:00', label: '12:00', period: 'TARDE', periodLabel: 'Tarde · 12:00' },
+  { slot: '12:30', label: '12:30', period: 'TARDE', periodLabel: 'Tarde · 12:30' },
+  { slot: '13:00', label: '13:00', period: 'TARDE', periodLabel: 'Tarde · 13:00' },
+  { slot: '13:30', label: '13:30', period: 'TARDE', periodLabel: 'Tarde · 13:30' },
+  { slot: '14:00', label: '14:00', period: 'TARDE', periodLabel: 'Tarde · 14:00' },
+  { slot: '14:30', label: '14:30', period: 'TARDE', periodLabel: 'Tarde · 14:30' },
+  { slot: '15:00', label: '15:00', period: 'TARDE', periodLabel: 'Tarde · 15:00' },
+  { slot: '15:30', label: '15:30', period: 'TARDE', periodLabel: 'Tarde · 15:30' },
+  { slot: '16:00', label: '16:00', period: 'TARDE', periodLabel: 'Tarde · 16:00' },
+  { slot: '16:30', label: '16:30', period: 'TARDE', periodLabel: 'Tarde · 16:30' },
 ];
 
 /**
@@ -24,7 +37,7 @@ export const STANDARD_TIME_SLOTS: TimeSlotDef[] = [
  */
 export function calculateSlotCapacity(operationalUnits: number): number {
   if (operationalUnits <= 0) return 0;
-  return Math.max(1, Math.ceil(operationalUnits / STANDARD_TIME_SLOTS.length));
+  return Math.max(1, Math.ceil(operationalUnits / 6));
 }
 
 export function isValidTimeSlot(slot: string): boolean {

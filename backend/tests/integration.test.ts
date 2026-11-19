@@ -617,15 +617,17 @@ describe('Mantovani API — End-to-End Integration Suite', () => {
 
     const targetDate = '2027-01-15';
 
-    // 2. Query time slots for target date for compactador
+    // 2. Query time slots for target date for compactador (19 half-hour slots from 07:30 to 16:30)
     const initialSlotsRes = await request(app)
       .get(`/api/v1/equipment/time-slots?date=${targetDate}&category_ids=${compactor.id}&quantities=1`);
     expect(initialSlotsRes.status).toBe(200);
     const slots = initialSlotsRes.body.data.slots;
-    expect(slots.length).toBe(6);
+    expect(slots.length).toBe(19);
+    expect(slots[0].slot).toBe('07:30');
+    expect(slots[slots.length - 1].slot).toBe('16:30');
 
-    // Initial slot 07:30 - 09:00 should be available with capacity 1
-    const slot1 = slots.find((s: { slot: string }) => s.slot === '07:30 - 09:00');
+    // Initial slot 07:30 should be available with capacity 1
+    const slot1 = slots.find((s: { slot: string }) => s.slot === '07:30');
     expect(slot1).toBeDefined();
     expect(slot1.available).toBe(true);
     expect(slot1.categories[0].slotCapacity).toBe(1);
@@ -639,7 +641,7 @@ describe('Mantovani API — End-to-End Integration Suite', () => {
         startDate: targetDate,
         endDate: targetDate,
         items: [{ categoryId: compactor.id, quantity: 1 }],
-        deliveryTimeSlot: '07:30 - 09:00',
+        deliveryTimeSlot: '07:30',
         paymentMethod: 'PIX',
         client: {
           cnpj: '11222333000181',
@@ -657,30 +659,30 @@ describe('Mantovani API — End-to-End Integration Suite', () => {
         },
       });
     expect(createRes.status).toBe(201);
-    expect(createRes.body.data.deliveryTimeSlot).toBe('07:30 - 09:00');
+    expect(createRes.body.data.deliveryTimeSlot).toBe('07:30');
 
-    // 4. Query time slots again - slot 07:30 - 09:00 must now be unavailable (booked/esgotado)!
+    // 4. Query time slots again - slot 07:30 must now be unavailable (booked/esgotado)!
     const afterBookingRes = await request(app)
       .get(`/api/v1/equipment/time-slots?date=${targetDate}&category_ids=${compactor.id}&quantities=1`);
     expect(afterBookingRes.status).toBe(200);
-    const updatedSlot1 = afterBookingRes.body.data.slots.find((s: { slot: string }) => s.slot === '07:30 - 09:00');
+    const updatedSlot1 = afterBookingRes.body.data.slots.find((s: { slot: string }) => s.slot === '07:30');
     expect(updatedSlot1.available).toBe(false);
     expect(updatedSlot1.reason).toContain('Esgotado para Compactador de Solo');
     expect(updatedSlot1.categories[0].bookedUnits).toBe(1);
     expect(updatedSlot1.categories[0].availableUnits).toBe(0);
 
-    // Other slots like 09:00 - 10:30 should still be available!
-    const slot2 = afterBookingRes.body.data.slots.find((s: { slot: string }) => s.slot === '09:00 - 10:30');
+    // Other slots like 08:00 should still be available!
+    const slot2 = afterBookingRes.body.data.slots.find((s: { slot: string }) => s.slot === '08:00');
     expect(slot2.available).toBe(true);
 
-    // 5. Trying to book again in the exhausted slot 07:30 - 09:00 must fail with validation error!
+    // 5. Trying to book again in the exhausted slot 07:30 must fail with validation error!
     const overbookRes = await request(app)
       .post('/api/v1/rentals')
       .send({
         startDate: targetDate,
         endDate: targetDate,
         items: [{ categoryId: compactor.id, quantity: 1 }],
-        deliveryTimeSlot: '07:30 - 09:00',
+        deliveryTimeSlot: '07:30',
         paymentMethod: 'PIX',
         client: {
           cnpj: '11222333000181',
@@ -764,7 +766,7 @@ describe('Mantovani API — End-to-End Integration Suite', () => {
         startDate: '2026-12-22',
         endDate: '2026-12-23',
         paymentMethod: 'CASH',
-        deliveryTimeSlot: '09:00 - 10:30',
+        deliveryTimeSlot: '09:00',
         items: [{ categoryId: prop.id, quantity: 1 }],
         client: {
           cnpj: '52342052000140',
@@ -802,6 +804,6 @@ describe('Mantovani API — End-to-End Integration Suite', () => {
     expect(lastMsg.text).toContain('ORDEM DE SEPARAÇÃO DE ESTOQUE — MANTOVANI');
     expect(lastMsg.text).toContain(rentalCode);
     expect(lastMsg.text).toContain('ESC-0001');
-    expect(lastMsg.text).toContain('09:00 - 10:30');
+    expect(lastMsg.text).toContain('09:00');
   });
 });
