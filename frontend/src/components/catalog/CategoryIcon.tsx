@@ -1,24 +1,36 @@
 import {
+  ArrowUpFromLine,
   Columns3,
   Disc3,
+  Droplets,
   Fan,
   Grid3x3,
   Hammer,
+  Layers,
+  RefreshCw,
+  Ruler,
   Vibrate,
   Weight,
   Wrench,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 const RULES: { test: RegExp; icon: LucideIcon }[] = [
-  { test: /placa|vibrat/, icon: Vibrate },
+  { test: /betoneira|misturador/, icon: RefreshCw },
+  { test: /regua/, icon: Ruler },
+  { test: /placa|vibrat|mangote/, icon: Vibrate },
   { test: /compact|sapo|soquete/, icon: Weight },
   { test: /martel|rompedor|demoli/, icon: Hammer },
   { test: /alisad|acabad|helicop/, icon: Fan },
   { test: /cortad|serra|corte/, icon: Disc3 },
+  { test: /gerador|energia/, icon: Zap },
+  { test: /plataforma|piso-metalico|pranchao/, icon: Layers },
   { test: /andaime/, icon: Grid3x3 },
   { test: /escora|escoramento|estronca/, icon: Columns3 },
+  { test: /guincho|talha|coluna/, icon: ArrowUpFromLine },
+  { test: /bomba|motobomba|submers/, icon: Droplets },
 ];
 
 export function iconForSlug(slug: string): LucideIcon {

@@ -28,13 +28,13 @@ const isCloudOrSsl =
 const pgPool = useEmbeddedByDefault
   ? null
   : new PgPool({
-      connectionString: env.DATABASE_URL,
-      max: env.DB_POOL_MAX,
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 8_000,
-      ssl: isCloudOrSsl ? { rejectUnauthorized: false } : undefined,
-      application_name: 'obra-rent-api',
-    });
+    connectionString: env.DATABASE_URL,
+    max: env.DB_POOL_MAX,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 8_000,
+    ssl: isCloudOrSsl ? { rejectUnauthorized: false } : undefined,
+    application_name: 'obra-rent-api',
+  });
 
 pgPool?.on('error', (err) => {
   logger.error({ err }, 'Unexpected idle PostgreSQL client error');

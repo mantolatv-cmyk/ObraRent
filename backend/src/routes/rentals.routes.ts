@@ -109,11 +109,11 @@ rentalsRouter.post('/quote', async (req, res) => {
   const rawAddr = (body.deliveryAddress ?? body.delivery_address) as Record<string, unknown> | undefined;
   const partialAddress: Partial<DeliveryAddress> | undefined = rawAddr
     ? {
-        cep: typeof rawAddr.cep === 'string' ? onlyDigits(rawAddr.cep) : undefined,
-        state: typeof rawAddr.state === 'string' ? rawAddr.state : undefined,
-        latitude: typeof rawAddr.latitude === 'number' ? rawAddr.latitude : undefined,
-        longitude: typeof rawAddr.longitude === 'number' ? rawAddr.longitude : undefined,
-      }
+      cep: typeof rawAddr.cep === 'string' ? onlyDigits(rawAddr.cep) : undefined,
+      state: typeof rawAddr.state === 'string' ? rawAddr.state : undefined,
+      latitude: typeof rawAddr.latitude === 'number' ? rawAddr.latitude : undefined,
+      longitude: typeof rawAddr.longitude === 'number' ? rawAddr.longitude : undefined,
+    }
     : undefined;
 
   const rawQuoteMethod = String(body.paymentMethod ?? body.payment_method ?? '').toUpperCase();

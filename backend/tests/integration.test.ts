@@ -89,15 +89,20 @@ describe('Mantovani API — End-to-End Integration Suite', () => {
     expect(res.body).toEqual({ status: 'ok', db: 'up' });
   });
 
-  it('GET /api/v1/equipment/categories returns the 7 seeded equipment categories', async () => {
+  it('GET /api/v1/equipment/categories returns the 15 seeded equipment categories', async () => {
     const res = await request(app).get('/api/v1/equipment/categories');
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body.data)).toBe(true);
-    expect(res.body.data.length).toBe(7);
+    expect(res.body.data.length).toBe(15);
 
     const compactor = res.body.data.find((c: { slug: string }) => c.slug === 'compactador-de-solo');
     expect(compactor).toBeDefined();
     expect(compactor.baseDailyRate).toBe(180);
+
+    const mixer = res.body.data.find((c: { slug: string }) => c.slug === 'betoneira-400l');
+    expect(mixer).toBeDefined();
+    expect(mixer.baseDailyRate).toBe(85);
+    expect(mixer.operationalUnits).toBe(11);
     expect(compactor.totalUnits).toBe(6);
     expect(compactor.operationalUnits).toBe(5); // 6 total, 1 in MAINTENANCE
   });

@@ -604,12 +604,12 @@ export function CompanyDeliveryStep({
                 {formatBRL(
                   paymentMethod === 'CASH'
                     ? Math.round(
-                        ((quote ? quote.subtotal : fallbackEstimate.subtotal) -
-                          (quote?.cashDiscountAmount && quote.cashDiscountAmount > 0
-                            ? quote.cashDiscountAmount
-                            : Math.round((quote ? quote.subtotal : fallbackEstimate.subtotal) * (CASH_DISCOUNT_PCT / 100) * 100) / 100)) *
-                          100,
-                      ) / 100
+                      ((quote ? quote.subtotal : fallbackEstimate.subtotal) -
+                        (quote?.cashDiscountAmount && quote.cashDiscountAmount > 0
+                          ? quote.cashDiscountAmount
+                          : Math.round((quote ? quote.subtotal : fallbackEstimate.subtotal) * (CASH_DISCOUNT_PCT / 100) * 100) / 100)) *
+                      100,
+                    ) / 100
                     : quote
                       ? quote.totalAmount
                       : fallbackEstimate.subtotal
